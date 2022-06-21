@@ -4,9 +4,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import chiya.core.base.collection.ChiyaHashMapValueMap;
+import chiya.core.base.collection.ContainerUtil;
 import chiya.web.security.entity.ChiyaRole;
+import chiya.web.security.entity.InterfaceGroup;
 import chiya.web.security.entity.SecurityInterface;
 import chiya.web.security.entity.SecurityRole;
 
@@ -21,6 +24,8 @@ public class SecurityCertification {
 
 	/** 角色和接口的存储容器 */
 	public static ChiyaHashMapValueMap<Integer, String, Integer> chiyaHashMapValueMap;
+	/** 接口和接口组的存储容器 */
+	public static ConcurrentHashMap<String, InterfaceGroup> chiyaGroup;
 
 	/**
 	 * 检查该用户访问的地址是否在配置中
@@ -37,6 +42,47 @@ public class SecurityCertification {
 			if (value != null) { if ((method & value) == method) { return true; } }
 		}
 		return false;
+	}
+
+	/**
+	 * 检查该接口是否属于这个组
+	 * 
+	 * @param url     访问的地址
+	 * @param method  请求方式
+	 * @param groupId 组id
+	 * @return true:通过/false:失败
+	 */
+	public static boolean checkGroup(String url, String method, Collection<Integer> groupId) {
+		if (groupId == null) { return false; }
+		for (Integer group : groupId) {
+			if (checkGroup(url, method, group)) { return true; } ;
+		}
+		return false;
+	}
+
+	/**
+	 * 检查该接口是否属于这个组
+	 * 
+	 * @param url     访问的地址
+	 * @param method  请求方式
+	 * @param groupId 组id
+	 * @return true:通过/false:失败
+	 */
+	public static boolean checkGroup(String url, String method, int groupId) {
+		if (chiyaGroup.containsKey(url)) { return chiyaGroup.get(url).check(method, groupId); }
+		return false;
+	}
+
+	/**
+	 * 获取接口分组
+	 * 
+	 * @param url    接口的地址
+	 * @param method 请求方式
+	 * @return 该接口生效的分组
+	 */
+	public static int[] getGroup(String url, String method) {
+		if (chiyaGroup.containsKey(url)) { return chiyaGroup.get(url).getMethod(method).valueToIntArray(); }
+		return null;
 	}
 
 	/**

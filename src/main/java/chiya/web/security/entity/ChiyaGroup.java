@@ -1,21 +1,21 @@
 package chiya.web.security.entity;
 
 /**
- * 角色列表
+ * 权限群组
  * 
+ * @author brain
+ *
  */
-public class ChiyaRole {
+public class ChiyaGroup {
 
 	/** 访客 */
 	public static final int PUBLIC = 0;
 	/** 普通用户 */
 	public static final int USER = 1;
-	/** 千夜 */
-	public static final int CHIYA = 2;
 	/** 后台人员 */
-	public static final int ADMIN = 3;
+	public static final int ADMIN = 2;
 	/** 对外接口 */
-	public static final int SERVER = 4;
+	public static final int SERVER = 3;
 	/** 角色容器 */
 	private static SecurityRole arrayRole[];
 
@@ -36,10 +36,9 @@ public class ChiyaRole {
 	 */
 	public static SecurityRole[] newRoleArray() {
 		SecurityRole array[] = {
-			new SecurityRole(USER, "普通用户", "可以对自己账号信息编辑"),
-			new SecurityRole(CHIYA, "千夜", "最高权限"),
-			new SecurityRole(ADMIN, "后台人员", "可以查看后台公开内容"),
-			new SecurityRole(SERVER, "对内服务接口", "服务和服务间调用"),
+			new SecurityRole(USER, "前台", "前台用户才可以访问"),
+			new SecurityRole(ADMIN, "后台", "后台用户才可以访问"),
+			new SecurityRole(SERVER, "服务", "服务和服务间调用"),
 		};
 		return array;
 	}
@@ -62,7 +61,7 @@ public class ChiyaRole {
 	public static SecurityRole[] newAllRoleArray() {
 		SecurityRole array[] = newRoleArray();
 		SecurityRole newArray[] = new SecurityRole[array.length + 1];
-		newArray[0] = new SecurityRole(PUBLIC, "游客", "没有账号就可以访问");
+		newArray[0] = new SecurityRole(PUBLIC, "公开", "无限制访问");
 		for (int i = 1; i < newArray.length; i++) {
 			newArray[i] = array[i - 1];
 		}

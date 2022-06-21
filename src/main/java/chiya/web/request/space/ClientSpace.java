@@ -44,7 +44,7 @@ public class ClientSpace {
 	 * @param value 内容
 	 */
 	public static void setHead(String head, String value) {
-		ThreadUtil.conditionLock(
+		ThreadUtil.doubleCheckLock(
 			() -> ObjectSpace.get(HEAD) == null,
 			ObjectSpace.class,
 			() -> ObjectSpace.put(HEAD, new HashMap<>())
@@ -83,7 +83,7 @@ public class ClientSpace {
 	 * @return HttpClient
 	 */
 	public static HttpClient getRequest() {
-		ThreadUtil.conditionLock(
+		ThreadUtil.doubleCheckLock(
 			() -> ObjectSpace.get(HTTP_CLIENT) == null,
 			ObjectSpace.class,
 			() -> ObjectSpace.put(HTTP_CLIENT, HttpClientBuilder.create().build())

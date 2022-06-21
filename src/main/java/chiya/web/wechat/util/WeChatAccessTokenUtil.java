@@ -39,7 +39,7 @@ public class WeChatAccessTokenUtil {
 	public static String getToken() {
 		// 多1分支，这样可以避免
 		long now = System.currentTimeMillis() + 60 * 1000;
-		ThreadUtil.conditionLock(() -> effectiveTime - now < 0, WeChatAccessTokenUtil.class, () -> refreshToken());
+		ThreadUtil.doubleCheckLock(() -> effectiveTime - now < 0, WeChatAccessTokenUtil.class, () -> refreshToken());
 		return access_token;
 	}
 }

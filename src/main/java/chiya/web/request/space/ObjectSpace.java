@@ -65,7 +65,7 @@ public class ObjectSpace {
 	 * @return ConcurrentHashMap
 	 */
 	private static ConcurrentHashMap<String, Object> getMap() {
-		ThreadUtil.conditionLock(
+		ThreadUtil.doubleCheckLock(
 			() -> needInit,
 			ThreadSpace.class,
 			() -> {
@@ -90,7 +90,7 @@ public class ObjectSpace {
 		garbageCollection.recycle();
 
 		String threadName = ThreadUtil.getThreadName();
-		ThreadUtil.conditionLock(
+		ThreadUtil.doubleCheckLock(
 			() -> threadThisMap.get(threadName) == null,
 			threadThisMap,
 			() -> threadThisMap.put(threadName, new ConcurrentHashMap<String, Object>())
