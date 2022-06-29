@@ -6,6 +6,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
 import java.io.BufferedReader;
@@ -75,15 +76,19 @@ public class BodyReaderWrapper extends HttpServletRequestWrapper {
 	 * @param value 值
 	 */
 	public void addParameter(String name, Object value) {
+
 		if (value != null) {
 			if (value instanceof String[]) {
 				params.put(name, (String[]) value);
 			} else if (value instanceof String) {
-				params.put(name, new String[] {
-						(String) value });
+				params.put(name, new String[] { (String) value });
+			} else if (value instanceof JSONArray) {
+				JSONArray data = (JSONArray) value;
+				String v[] = new String[data.size()];
+				for (int i = 0; i < v.length; i++) { v[i] = data.getString(i); }
+				params.put(name, v);
 			} else {
-				params.put(name, new String[] {
-						String.valueOf(value) });
+				params.put(name, new String[] { String.valueOf(value) });
 			}
 		}
 	}
