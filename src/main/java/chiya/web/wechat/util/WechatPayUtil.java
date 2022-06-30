@@ -175,7 +175,7 @@ public class WechatPayUtil {
 	 * 调用微信支付对象
 	 * 
 	 * @param orderId     订单号
-	 * @param productInfo 商品猫叔
+	 * @param productInfo 商品描述
 	 * @param total       支付金额（分）
 	 * @param openid      微信id
 	 * @return prepay_id 支付id

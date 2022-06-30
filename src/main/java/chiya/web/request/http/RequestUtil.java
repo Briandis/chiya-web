@@ -41,9 +41,8 @@ public class RequestUtil {
 		try {
 			return EntityUtils.toString(httpClient.execute(requestBase).getEntity());
 		} catch (IOException e) {
-			new RuntimeException(e);
+			throw new RuntimeException(e);
 		}
-		return null;
 	}
 
 	/**

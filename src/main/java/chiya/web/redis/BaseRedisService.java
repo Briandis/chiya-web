@@ -8,6 +8,9 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 
+import chiya.core.base.object.ObjectUtil;
+import chiya.core.base.string.StringUtil;
+
 /**
  * 缓存通过用操作
  * 
@@ -418,4 +421,41 @@ public class BaseRedisService {
 	public long listDelete(String key, long count, Object value) {
 		return redisTemplate.opsForList().remove(key, count, value);
 	}
+
+	/**
+	 * 获取锁
+	 * 
+	 * @param key   键
+	 * @param value 值
+	 * @return true:获取锁成功/false:获取锁失败
+	 */
+	public boolean lock(String key, String value) {
+		return redisTemplate.opsForValue().setIfAbsent(key, value);
+	}
+
+	/**
+	 * 获取锁
+	 * 
+	 * @param key   键
+	 * @param value 值
+	 * @param time  过期时间
+	 * @return true:获取锁成功/false:获取锁失败
+	 */
+	public boolean lock(String key, String value, long time) {
+		return redisTemplate.opsForValue().setIfAbsent(key, value, time, TimeUnit.MILLISECONDS);
+	}
+
+	/**
+	 * 解锁
+	 * 
+	 * @param key   键
+	 * @param value 值
+	 * @return true:解锁成功/false:解锁失败
+	 */
+	public boolean unlock(String key, String value) {
+		Object obj = redisTemplate.opsForValue().get(key);
+		// 与短路特性删除Key
+		return StringUtil.eqString(value, ObjectUtil.toString(obj)) && delete(key);
+	}
+
 }
