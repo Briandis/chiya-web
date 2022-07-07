@@ -147,24 +147,24 @@ public class WechatPayUtil {
 	 * 
 	 * @param orderId     订单id
 	 * @param outRefundNo 商户退款单号
-	 * @param total       退款金额（分为单位）
+	 * @param total       原订单金额
+	 * @param refund      退款金额（分为单位）
 	 * @param reason      退款原因
 	 * @return 封装后的JSON字符串
 	 */
-	public static String createRefundOrderBody(String orderId, String outRefundNo, Long total, String reason) {
+	public static String createRefundOrderBody(String orderId, String outRefundNo, long total, long refund, String reason) {
 		JSONObject jsonObject = new JSONObject();
 		// 商户订单号
 		jsonObject.put("out_trade_no", orderId);
 		// 商户退款单号
 		jsonObject.put("out_refund_no", outRefundNo);
-
 		// 回调地址
 		jsonObject.put("notify_url", WeChatConfig.REFUNDS_CALLBACK_PATH);
 		JSONObject amount = new JSONObject();
-		// 原订单金额
+		// 退款金额
 		amount.put("total", total);
-		// 退款金额-两者相等一次性退完
-		amount.put("refund", total);
+		// 原订单金额
+		amount.put("refund", refund);
 		// 退款货币类型
 		amount.put("currency", "CNY");
 		jsonObject.put("amount", amount);
@@ -222,14 +222,15 @@ public class WechatPayUtil {
 	 * 
 	 * @param orderId     订单id
 	 * @param outRefundNo 交易单号
-	 * @param total       退款金额（分为单位）
+	 * @param total       原订单金额
+	 * @param refund      退款金额（分为单位）
 	 * @param reason      退款原因
 	 * @return 成功/失败
 	 */
-	public static boolean sendRefundsOrder(String orderId, String outRefundNo, Long total, String reason) {
+	public static boolean sendRefundsOrder(String orderId, String outRefundNo, long total, long refund, String reason) {
 		HttpClient httpClient = WechatPayUtil.request();
 		// 创建退款请求体
-		String body = WechatPayUtil.createRefundOrderBody(orderId, outRefundNo, total, reason);
+		String body = WechatPayUtil.createRefundOrderBody(orderId, outRefundNo, total, refund, reason);
 		String bodyAsString = RequestUtil.httpRquest(
 			httpClient,
 			HttpMethod.postJson(WechatAPI.REFUND, body),
