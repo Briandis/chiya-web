@@ -5,7 +5,7 @@ import java.util.Base64;
 
 import com.alibaba.fastjson.JSON;
 
-import chiya.core.base.string.StringUtil;
+import chiya.core.base.random.RandomString;
 import chiya.web.wechat.config.WeChatConfig;
 import chiya.web.wechat.util.WechatPayUtil;
 import lombok.Getter;
@@ -28,7 +28,7 @@ public class PayResult {
 	/**
 	 * 随机字符串，最大长度32
 	 */
-	private String nonceStr = StringUtil.randomStringByUUID();
+	private String nonceStr = RandomString.randomStringByUUID();
 
 	/**
 	 * 订单详情扩展字符串，需要接收预订单的返回数据
