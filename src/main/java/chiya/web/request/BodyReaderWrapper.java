@@ -9,6 +9,8 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
+import chiya.core.base.string.StringUtil;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -44,7 +46,7 @@ public class BodyReaderWrapper extends HttpServletRequestWrapper {
 		// 参数转化
 		params.putAll(request.getParameterMap());
 		// 是JSON的就转成普通的key-value的方式
-		if (TYPE.equals(request.getContentType())) { addAllParameters(JSONObject.parseObject(sessionStream)); }
+		if (StringUtil.findString(request.getContentType(), TYPE) != -1) { addAllParameters(JSONObject.parseObject(sessionStream)); }
 	}
 
 	/**

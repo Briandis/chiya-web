@@ -20,7 +20,7 @@ public class RequestFilter {
 
 	public static void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
 		// 只有是JSON的时候采取复制
-		if (StringUtil.eqString(TYPE, servletRequest.getContentType())) {
+		if (StringUtil.findString(servletRequest.getContentType(), TYPE) != -1) {
 			HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
 			ServletRequest requestWrapper = new BodyReaderWrapper(httpServletRequest);
 			filterChain.doFilter(requestWrapper, servletResponse);
