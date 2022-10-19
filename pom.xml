@@ -12,15 +12,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
-
 	<dependencies>
-		<!-- lombok -->
-		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<version>1.18.22</version>
-			<optional>true</optional>
-		</dependency>
 		<!-- fastjson JSON处理 -->
 		<dependency>
 			<groupId>com.alibaba</groupId>
@@ -32,7 +24,7 @@
 			<artifactId>chiya</artifactId>
 			<version>0.0.2</version>
 			<scope>system</scope>
-			<systemPath>D:/javaLib/chiyaUtil.jar</systemPath>
+			<systemPath>D:/lib/jar/chiyaUtil.jar</systemPath>
 		</dependency>
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>

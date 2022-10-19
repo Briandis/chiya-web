@@ -1,11 +1,9 @@
 package chiya.web.wechat.entity;
 
-import lombok.Getter;
 
 /**
  * 微信支付订单状态枚举值
  */
-@Getter
 public enum TradeStateEnum {
 	/**
 	 * 支付成功
@@ -49,4 +47,21 @@ public enum TradeStateEnum {
 	 * 交易状态描述
 	 */
 	private String tradeStateDesc;
+	
+	/**
+	 * 获取错误类型
+	 * @return 错误类型
+	 */
+	public String getTradeState() {
+		return tradeState;
+	}
+	/**
+	 * 获取错误详情
+	 * @return 错误详情
+	 */
+	public String getTradeStateDesc() {
+		return tradeStateDesc;
+	}
+	
+	
 }

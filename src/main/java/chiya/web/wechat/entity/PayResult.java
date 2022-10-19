@@ -8,8 +8,6 @@ import com.alibaba.fastjson.JSON;
 import chiya.core.base.random.RandomString;
 import chiya.web.wechat.config.WeChatConfig;
 import chiya.web.wechat.util.WechatPayUtil;
-import lombok.Getter;
-import lombok.Setter;
 
 /**
  * 支付单返回的信息，给前台调用支付接口使用
@@ -17,8 +15,6 @@ import lombok.Setter;
  * @author brian
  *
  */
-@Getter
-@Setter
 public class PayResult {
 
 	/**
@@ -62,6 +58,151 @@ public class PayResult {
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	/**
+	 * 获取时间戳，不包含毫秒的时间戳
+	 * 
+	 * @return 时间戳，不包含毫秒的时间戳
+	 */
+	public String getTimeStamp() {
+		return timeStamp;
+	}
+
+	/**
+	 * 设置时间戳，不包含毫秒的时间戳
+	 * 
+	 * @param timeStamp 时间戳，不包含毫秒的时间戳
+	 */
+	public void setTimeStamp(String timeStamp) {
+		this.timeStamp = timeStamp;
+	}
+
+	/**
+	 * 链式添加时间戳，不包含毫秒的时间戳
+	 * 
+	 * @param timeStamp 时间戳，不包含毫秒的时间戳
+	 * @return 对象本身
+	 */
+	public PayResult chainTimeStamp(String timeStamp) {
+		setTimeStamp(timeStamp);
+		return this;
+	}
+
+	/**
+	 * 获取随机字符串，最大长度32
+	 * 
+	 * @return 随机字符串，最大长度32
+	 */
+	public String getNonceStr() {
+		return nonceStr;
+	}
+
+	/**
+	 * 设置随机字符串，最大长度32
+	 * 
+	 * @param nonceStr 随机字符串，最大长度32
+	 */
+	public void setNonceStr(String nonceStr) {
+		this.nonceStr = nonceStr;
+	}
+
+	/**
+	 * 链式添加随机字符串，最大长度32
+	 * 
+	 * @param nonceStr 随机字符串，最大长度32
+	 * @return 对象本身
+	 */
+	public PayResult chainNonceStr(String nonceStr) {
+		setNonceStr(nonceStr);
+		return this;
+	}
+
+	/**
+	 * 获取订单详情扩展字符串，需要接收预订单的返回数据
+	 * 
+	 * @return 订单详情扩展字符串，需要接收预订单的返回数据
+	 */
+	public String getPackages() {
+		return packages;
+	}
+
+	/**
+	 * 设置订单详情扩展字符串，需要接收预订单的返回数据
+	 * 
+	 * @param packages 订单详情扩展字符串，需要接收预订单的返回数据
+	 */
+	public void setPackages(String packages) {
+		this.packages = packages;
+	}
+
+	/**
+	 * 链式添加订单详情扩展字符串，需要接收预订单的返回数据
+	 * 
+	 * @param packages 订单详情扩展字符串，需要接收预订单的返回数据
+	 * @return 对象本身
+	 */
+	public PayResult chainPackages(String packages) {
+		setPackages(packages);
+		return this;
+	}
+
+	/**
+	 * 获取签名方式，RSA默认值
+	 * 
+	 * @return 签名方式，RSA默认值
+	 */
+	public String getSignType() {
+		return signType;
+	}
+
+	/**
+	 * 设置签名方式，RSA默认值
+	 * 
+	 * @param signType 签名方式，RSA默认值
+	 */
+	public void setSignType(String signType) {
+		this.signType = signType;
+	}
+
+	/**
+	 * 链式添加签名方式，RSA默认值
+	 * 
+	 * @param signType 签名方式，RSA默认值
+	 * @return 对象本身
+	 */
+	public PayResult chainSignType(String signType) {
+		setSignType(signType);
+		return this;
+	}
+
+	/**
+	 * 获取签名，加密方式
+	 * 
+	 * @return 签名，加密方式
+	 */
+	public String getPaySign() {
+		return paySign;
+	}
+
+	/**
+	 * 设置签名，加密方式
+	 * 
+	 * @param paySign 签名，加密方式
+	 */
+	public void setPaySign(String paySign) {
+		this.paySign = paySign;
+	}
+
+	/**
+	 * 链式添加签名，加密方式
+	 * 
+	 * @param paySign 签名，加密方式
+	 * @return 对象本身
+	 */
+	public PayResult chainPaySign(String paySign) {
+		setPaySign(paySign);
+		return this;
 	}
 
 	@Override
