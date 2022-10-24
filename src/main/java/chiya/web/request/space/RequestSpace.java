@@ -5,9 +5,39 @@ import java.util.HashMap;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
-import chiya.core.base.thread.ThreadUtil;
+import chiya.core.base.thread.ChiyaSpace;
 
-public class ClientSpace {
+/**
+ * 发送请求所需要的线程存储空间
+ * 
+ * @author chiya
+ *
+ */
+public class RequestSpace {
+	/** 私有化构造方法 */
+	private RequestSpace() {}
+
+	/** 存储容器 */
+	private static final ChiyaSpace<String, Object> CHIYA_SPACE = new ChiyaSpace<>();
+
+	/** 线程空间的名称 */
+	private static final String HTTP_CLIENT = "httpClient";
+	/** 请求头参数 */
+	private static final String HEAD = "head";
+
+	/**
+	 * 获取对应线程的链接
+	 * 
+	 * @return HTTP链接
+	 */
+	public static HttpClient getRequest() {
+		return toHttpClient(
+			CHIYA_SPACE.computeIfAbsent(
+				HTTP_CLIENT,
+				HttpClientBuilder.create().build()
+			)
+		);
+	}
 
 	/**
 	 * 转换成HTTP链接
@@ -32,11 +62,6 @@ public class ClientSpace {
 		return null;
 	}
 
-	/** 线程空间的名称 */
-	private static final String HTTP_CLIENT = "httpClient";
-	/** 请求头参数 */
-	private static final String HEAD = "head";
-
 	/**
 	 * 设置请求头内容
 	 * 
@@ -44,12 +69,9 @@ public class ClientSpace {
 	 * @param value 内容
 	 */
 	public static void setHead(String head, String value) {
-		ThreadUtil.doubleCheckLock(
-			() -> ObjectSpace.get(HEAD) == null,
-			ObjectSpace.class,
-			() -> ObjectSpace.put(HEAD, new HashMap<>())
-		);
-		toHashMap(ObjectSpace.get(HEAD)).put(head, value);
+		toHashMap(
+			CHIYA_SPACE.computeIfAbsent(HEAD, new HashMap<String, String>())
+		).put(head, value);
 	}
 
 	/**
@@ -58,14 +80,14 @@ public class ClientSpace {
 	 * @param head 请求头
 	 */
 	public static void removeHead(String head) {
-		if (ObjectSpace.get(HEAD) != null) { toHashMap(ObjectSpace.get(HEAD)).remove(head); }
+		if (CHIYA_SPACE.get(HEAD) != null) { toHashMap(CHIYA_SPACE.get(HEAD)).remove(head); }
 	}
 
 	/**
-	 * 清楚全部请求头
+	 * 清除全部请求头
 	 */
 	public static void removeAllHead() {
-		if (ObjectSpace.get(HEAD) != null) { toHashMap(ObjectSpace.get(HEAD)).clear(); }
+		if (CHIYA_SPACE.get(HEAD) != null) { toHashMap(CHIYA_SPACE.get(HEAD)).clear(); }
 	}
 
 	/**
@@ -74,20 +96,7 @@ public class ClientSpace {
 	 * @return 请求头信息
 	 */
 	public static HashMap<String, String> getAllHead() {
-		return toHashMap(ObjectSpace.get(HEAD));
+		return toHashMap(CHIYA_SPACE.get(HEAD));
 	}
 
-	/**
-	 * 获取对应线程的链接
-	 * 
-	 * @return HttpClient
-	 */
-	public static HttpClient getRequest() {
-		ThreadUtil.doubleCheckLock(
-			() -> ObjectSpace.get(HTTP_CLIENT) == null,
-			ObjectSpace.class,
-			() -> ObjectSpace.put(HTTP_CLIENT, HttpClientBuilder.create().build())
-		);
-		return toHttpClient(ObjectSpace.get(HTTP_CLIENT));
-	}
 }

@@ -22,7 +22,7 @@ import chiya.core.base.exception.Assert;
 import chiya.core.base.string.StringUtil;
 import chiya.core.base.time.DateUtil;
 import chiya.web.request.http.HttpMethod;
-import chiya.web.request.http.RequestUtil;
+import chiya.web.request.http.ThreadRequest;
 import chiya.web.wechat.config.WeChatConfig;
 import chiya.web.wechat.entity.Refunds;
 import chiya.web.wechat.entity.Resource;
@@ -187,7 +187,7 @@ public class WechatPayUtil {
 		String body = WechatPayUtil.createPayOrderBody(orderId, productInfo, total, openid);
 		// JSAPI支付路径
 		HttpPost httpPost = HttpMethod.postJson(WechatAPI.JSAPI, body);
-		String bodyAsString = RequestUtil.httpRquest(httpClient, httpPost);
+		String bodyAsString = ThreadRequest.httpRequest(httpClient, httpPost);
 
 		String PREPAY_ID = "prepay_id";
 		JSONObject jsonObject = JSONObject.parseObject(bodyAsString);
@@ -209,10 +209,10 @@ public class WechatPayUtil {
 		HttpClient httpClient = WechatPayUtil.request();
 		// 订单路径+订单号+商户参数，详情见微信支付官方文档
 		String url = WechatAPI.OUT_TRADE_NO + orderId + "?mchid=" + WeChatConfig.MCHID;
-		String bodyAsString = RequestUtil.httpRquest(
+		String bodyAsString = ThreadRequest.httpRequest(
 			httpClient,
 			HttpMethod.getJson(url),
-			() -> Assert.fail("获取订单状态时异常")
+			e -> Assert.fail("获取订单状态时异常")
 		);
 		return JSON.parseObject(bodyAsString, WechatCallbackResouce.class);
 	}
@@ -231,10 +231,10 @@ public class WechatPayUtil {
 		HttpClient httpClient = WechatPayUtil.request();
 		// 创建退款请求体
 		String body = WechatPayUtil.createRefundOrderBody(orderId, outRefundNo, total, refund, reason);
-		String bodyAsString = RequestUtil.httpRquest(
+		String bodyAsString = ThreadRequest.httpRequest(
 			httpClient,
 			HttpMethod.postJson(WechatAPI.REFUND, body),
-			() -> Assert.fail("微信支付退款异常")
+			e -> Assert.fail("微信支付退款异常")
 		);
 		JSONObject jsonObject = JSONObject.parseObject(bodyAsString);
 		if (jsonObject != null) {
@@ -280,10 +280,10 @@ public class WechatPayUtil {
 		HttpClient httpClient = WechatPayUtil.request();
 		// 退款路径URL+/商户订单号
 		String url = WechatAPI.REFUND + "/" + orderId;
-		String bodyAsString = RequestUtil.httpRquest(
+		String bodyAsString = ThreadRequest.httpRequest(
 			httpClient,
 			HttpMethod.getJson(url),
-			() -> Assert.fail("退款查询出现异常")
+			e -> Assert.fail("退款查询出现异常")
 		);
 		return JSON.parseObject(bodyAsString, Refunds.class);
 	}
@@ -304,7 +304,7 @@ public class WechatPayUtil {
 		String body = WechatPayUtil.createPayOrderBody(orderId, productInfo, total, openid);
 		// JSAPI支付路径
 		HttpPost httpPost = HttpMethod.postJson(WechatAPI.NATIVE, body);
-		String bodyAsString = RequestUtil.httpRquest(httpClient, httpPost);
+		String bodyAsString = ThreadRequest.httpRequest(httpClient, httpPost);
 		// 二维码的字段
 		String PREPAY_ID = "code_url";
 		JSONObject jsonObject = JSONObject.parseObject(bodyAsString);

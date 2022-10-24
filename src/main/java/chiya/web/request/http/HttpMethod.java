@@ -7,6 +7,8 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 
+import com.alibaba.fastjson.JSONObject;
+
 /**
  * HTTP常用请求处理
  * 
@@ -14,6 +16,17 @@ import org.apache.http.entity.StringEntity;
  *
  */
 public class HttpMethod {
+
+	/**
+	 * 生成对应的StringEntity
+	 * 
+	 * @param object 普通对象
+	 * @return StringEntity
+	 */
+	public static StringEntity toStringEntity(Object object) {
+		return new StringEntity(JSONObject.toJSONString(object), "UTF-8");
+	}
+
 	/**
 	 * 创建get请求对象
 	 * 
@@ -75,7 +88,7 @@ public class HttpMethod {
 	 */
 	public static HttpPost post(String url, String data) {
 		HttpPost httpPost = post(url);
-		httpPost.setEntity(new StringEntity(data, "UTF-8"));
+		if (data != null) { httpPost.setEntity(new StringEntity(data, "UTF-8")); }
 		return httpPost;
 	}
 
@@ -98,7 +111,20 @@ public class HttpMethod {
 	 */
 	public static HttpPost postJson(String url, String data) {
 		HttpPost httpPost = postJson(url);
-		httpPost.setEntity(new StringEntity(data, "UTF-8"));
+		if (data != null) { httpPost.setEntity(new StringEntity(data, "UTF-8")); }
+		return httpPost;
+	}
+
+	/**
+	 * 创建JSON传输的POST请求
+	 * 
+	 * @param url  请求地址
+	 * @param data 传输的数据
+	 * @return HttpPost对象
+	 */
+	public static HttpPost postJson(String url, Object data) {
+		HttpPost httpPost = postJson(url);
+		if (data != null) { httpPost.setEntity(toStringEntity(data)); }
 		return httpPost;
 	}
 
@@ -110,6 +136,32 @@ public class HttpMethod {
 	 */
 	public static HttpPut putJson(String url) {
 		return setJsonRequest(new HttpPut(url));
+	}
+
+	/**
+	 * 创建PUT的JSON请求对象
+	 * 
+	 * @param url  请求路径
+	 * @param data 传输的数据
+	 * @return HttpPut对象
+	 */
+	public static HttpPut putJson(String url, String data) {
+		HttpPut httpPut = putJson(url);
+		if (data != null) { httpPut.setEntity(new StringEntity(data, "UTF-8")); }
+		return httpPut;
+	}
+
+	/**
+	 * 创建PUT的JSON请求对象
+	 * 
+	 * @param url  请求路径
+	 * @param data 传输的数据
+	 * @return HttpPut对象
+	 */
+	public static HttpPut putJson(String url, Object data) {
+		HttpPut httpPut = putJson(url);
+		if (data != null) { httpPut.setEntity(toStringEntity(data)); }
+		return httpPut;
 	}
 
 	/**
