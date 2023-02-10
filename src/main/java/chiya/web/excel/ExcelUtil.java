@@ -52,7 +52,7 @@ public class ExcelUtil {
 	}
 
 	/**
-	 * 订单导出
+	 * 导出
 	 * 
 	 * @param <T>       List的类型
 	 * @param list      要导出的列表
