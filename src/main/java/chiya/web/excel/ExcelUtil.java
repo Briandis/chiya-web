@@ -152,19 +152,55 @@ public class ExcelUtil {
 	 * 
 	 * @param <T>         导入的对象类型
 	 * @param inputStream 输入流
-	 * @param cls         用于泛型的类型
 	 * @param excelRow    读取一行后返回对象的方法
 	 * @return 读取后生成的列表
 	 */
-	public static <T> List<T> importExecl(InputStream inputStream, Class<T> cls, ExcelRow<T> excelRow) {
+	public static <T> List<T> importExecl(InputStream inputStream, ExcelRow<T> excelRow) {
 		Workbook workbook = ExcelUtil.getWorkbook(inputStream);
 		Sheet sheet = workbook.getSheetAt(0);
+		List<T> list = importExecl(sheet, excelRow, 1);
+		ExcelUtil.workbookClose(workbook);
+		return list;
+	}
+
+	/**
+	 * 导入
+	 * 
+	 * @param <T>         导入的对象类型
+	 * @param inputStream 输入流
+	 * @param excelRow    读取一行后返回对象的方法
+	 * @param startRow    开始的行
+	 * @return 读取后生成的列表
+	 */
+	public static <T> List<T> importExecl(Sheet sheet, ExcelRow<T> excelRow, int startRow) {
 		int last = sheet.getLastRowNum();
 		List<T> list = new ArrayList<T>();
-		for (int i = 1; i < last + 1; i++) {
-			Row row = sheet.getRow(i);
-			list.add(excelRow.nextRow(row));
+		ChiyaRow chiyaRow = new ChiyaRow();
+		for (int i = startRow; i < last + 1; i++) {
+			chiyaRow.setRow(sheet.getRow(i));
+			// 默认全部允许添加
+			chiyaRow.setAllowAdd(true);
+			T object = excelRow.nextRow(chiyaRow);
+			if (chiyaRow.isAllowAdd()) { list.add(object); }
+
 		}
+		return list;
+	}
+
+	/**
+	 * 导入
+	 * 
+	 * @param <T>         导入的对象类型
+	 * @param inputStream 输入流
+	 * @param sheetName   工作页名称
+	 * @param excelRow    读取一行后返回对象的方法
+	 * @param startRow    开始的行
+	 * @return 读取后生成的列表
+	 */
+	public static <T> List<T> importExecl(InputStream inputStream, String sheetName, ExcelRow<T> excelRow, int startRow) {
+		Workbook workbook = ExcelUtil.getWorkbook(inputStream);
+		Sheet sheet = workbook.getSheet(sheetName);
+		List<T> list = importExecl(sheet, excelRow, startRow);
 		ExcelUtil.workbookClose(workbook);
 		return list;
 	}
