@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -245,17 +246,36 @@ public class ExcelUtil {
 	/**
 	 * 向指定单元格中写入数据
 	 * 
+	 * @param sheet          sheet页
+	 * @param rowIndex       row坐标，从0计算
+	 * @param CellIndex      cell坐标，从0计算
+	 * @param value          写入的对象
+	 * @param formatFunction 格式化方法
+	 */
+	public static void writeValue(Sheet sheet, int rowIndex, int CellIndex, List<Object> value, Function<Object, String> formatFunction) {
+		if (value != null) {
+			Loop.forEach(value, (obj, index) -> {
+				if (obj != null) {
+					if (formatFunction != null) {
+						writeValue(sheet, rowIndex + index, CellIndex, formatFunction.apply(obj));
+					} else {
+						writeValue(sheet, rowIndex + index, CellIndex, obj.toString());
+					}
+				}
+			});
+		}
+	}
+
+	/**
+	 * 向指定单元格中写入数据
+	 * 
 	 * @param sheet     sheet页
 	 * @param rowIndex  row坐标，从0计算
 	 * @param CellIndex cell坐标，从0计算
 	 * @param value     写入的对象
 	 */
 	public static void writeValue(Sheet sheet, int rowIndex, int CellIndex, List<Object> value) {
-		if (value != null) {
-			Loop.forEach(value, (obj, index) -> {
-				if (obj != null) { writeValue(sheet, rowIndex + index, CellIndex, obj.toString()); }
-			});
-		}
+		writeValue(sheet, rowIndex, CellIndex, value, null);
 	}
 
 	/**
@@ -295,7 +315,7 @@ public class ExcelUtil {
 	 */
 	public static void insertRow(int start, int count, Sheet sheet) {
 		HashMap<Integer, CellStyle> hashMap = getRowStyle(sheet.getRow(start));
-		if (sheet.getRow(start) == null) { return; }
+		if (sheet.getRow(start) == null || count == 0) { return; }
 		sheet.shiftRows(start, sheet.getLastRowNum(), count);
 		for (int i = start; i < start + count; i++) {
 			Row row = sheet.getRow(i);
@@ -307,11 +327,15 @@ public class ExcelUtil {
 	/**
 	 * sheet页写入数据
 	 * 
-	 * @param listConfit 坐标配置
-	 * @param dataMap    数据
-	 * @param sheet      所在sheet页
+	 * @param listConfit        坐标配置
+	 * @param dataMap           数据
+	 * @param sheet             所在sheet页
+	 * @param formatFunctionMap 格式化方法配置
 	 */
-	public static void writeData(List<ExcelCoordinateConfig> listConfit, HashMap<String, List<Object>> dataMap, Sheet sheet) {
+	public static void writeData(List<ExcelCoordinateConfig> listConfit, HashMap<String, List<Object>> dataMap, Sheet sheet, Map<String, Function<Object, String>> formatFunctionMap) {
+		// 方便操作进行实例化
+		if (formatFunctionMap == null) { formatFunctionMap = new HashMap<>(); }
+		Map<String, Function<Object, String>> formatFunction = formatFunctionMap;
 		// 对配置进行排序，按照区块标记的行号排序
 		listConfit = ContainerUtil.listSort(listConfit, (o1, o2) -> {
 			IntegerPack a = new IntegerPack(-1);
@@ -359,7 +383,7 @@ public class ExcelUtil {
 						if (excelConfig.getReference() != null) {
 							List<Object> data = dataMap.get(excelConfig.getReference());
 							Assert.isTrue(data == null || data.size() == 0, excelConfig.getReference() + "的值不存在");
-							writeValue(sheet, x.getData(), y.getData(), data);
+							writeValue(sheet, x.getData(), y.getData(), data, formatFunction.get(excelConfig.getFormat()));
 
 						} else if (excelConfig.getDefalutValue() != null) {
 							// 如果不存在引用 则写入默认值
@@ -391,7 +415,7 @@ public class ExcelUtil {
 					if (block.getReference() != null) {
 						List<Object> data = dataMap.get(block.getReference());
 						Assert.isTrue(data == null || data.size() == 0, block.getReference() + "的值不存在");
-						writeValue(sheet, block.getRowIndex() + insertCount.getData(), block.getCellIndex(), data);
+						writeValue(sheet, block.getRowIndex() + insertCount.getData(), block.getCellIndex(), data, formatFunction.get(block.getFormat()));
 					} else if (block.getDefalutValue() != null) {
 						// 根据当前配置写入，并重新计算位置
 						writeValue(sheet, block.getRowIndex() + insertCount.getData(), block.getCellIndex(), block.getDefalutValue());
@@ -410,7 +434,31 @@ public class ExcelUtil {
 	 * @param dataMap    数据
 	 * @param sheet      所在sheet页
 	 */
+	public static void writeData(List<ExcelCoordinateConfig> listConfit, HashMap<String, List<Object>> dataMap, Sheet sheet) {
+		writeData(listConfit, dataMap, sheet, null);
+	}
+
+	/**
+	 * sheet页写入数据
+	 * 
+	 * @param listConfit 坐标配置
+	 * @param dataMap    数据
+	 * @param sheet      所在sheet页
+	 */
 	public static void writeData(List<ExcelCoordinateConfig> listConfit, HashMap<String, List<Object>> dataMap, Workbook workbook) {
+		writeData(listConfit, dataMap, workbook, null);
+
+	}
+
+	/**
+	 * sheet页写入数据
+	 * 
+	 * @param listConfit        坐标配置
+	 * @param dataMap           数据
+	 * @param sheet             所在sheet页
+	 * @param formatFunctionMap 格式化方法配置
+	 */
+	public static void writeData(List<ExcelCoordinateConfig> listConfit, HashMap<String, List<Object>> dataMap, Workbook workbook, Map<String, Function<Object, String>> formatFunctionMap) {
 		HashMap<String, List<ExcelCoordinateConfig>> hashMap = new HashMap<>();
 		listConfit.forEach(config -> {
 			if (!hashMap.containsKey(config.getSheetName())) { hashMap.put(config.getSheetName(), new ArrayList<>()); }
@@ -418,7 +466,7 @@ public class ExcelUtil {
 		});
 		hashMap.forEach((sheetName, list) -> {
 			Sheet sheet = getOrCreateSheet(workbook, sheetName);
-			writeData(list, dataMap, sheet);
+			writeData(list, dataMap, sheet, formatFunctionMap);
 		});
 
 	}

@@ -7,7 +7,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.util.EntityUtils;
 
-import chiya.core.base.function.Task;
+import chiya.core.base.function.VoidGenericFunction;
 import chiya.web.request.space.RequestSpace;
 
 public class ThreadRequest {
@@ -55,13 +55,13 @@ public class ThreadRequest {
 	 * @param error       错误失败回调
 	 * @return 响应数据
 	 */
-	public static String httpRequest(HttpClient httpClient, HttpUriRequest requestBase, Task<IOException> error) {
+	public static String httpRequest(HttpClient httpClient, HttpUriRequest requestBase, VoidGenericFunction<IOException> error) {
 		try {
 			HttpResponse httpResponse = httpClient.execute(requestBase);
 
 			return EntityUtils.toString(httpResponse.getEntity());
 		} catch (IOException e) {
-			error.task(e);
+			error.execute(e);
 		}
 		return null;
 	}
