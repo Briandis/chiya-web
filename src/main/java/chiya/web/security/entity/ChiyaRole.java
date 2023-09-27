@@ -10,8 +10,8 @@ public class ChiyaRole {
 	public static final int PUBLIC = 0;
 	/** 普通用户 */
 	public static final int USER = 1;
-	/** 千夜 */
-	public static final int CHIYA = 2;
+	/** ROOT管理员 */
+	public static final int ROOT = 2;
 	/** 后台人员 */
 	public static final int ADMIN = 3;
 	/** 对外接口 */
@@ -37,8 +37,8 @@ public class ChiyaRole {
 	public static SecurityRole[] newRoleArray() {
 		SecurityRole array[] = {
 			new SecurityRole(USER, "普通用户", "可以对自己账号信息编辑"),
-			new SecurityRole(CHIYA, "千夜", "最高权限"),
-			new SecurityRole(ADMIN, "后台人员", "可以查看后台公开内容"),
+			new SecurityRole(ROOT, "系统管理员", "最高权限"),
+			new SecurityRole(ADMIN, "后台管理员", "可以查看后台公开内容"),
 			new SecurityRole(SERVER, "对内服务接口", "服务和服务间调用"),
 		};
 		return array;
