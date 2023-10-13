@@ -20,7 +20,7 @@ import chiya.web.security.entity.InterfaceGroup;
 public class ChiyaSecurityExtract {
 
 	@Autowired
-	private RequestMappingHandlerMapping requestHandlerMapping;
+	private RequestMappingHandlerMapping requestMappingHandlerMapping;
 	/** 自定义系统路径前缀 */
 	public static String servicePath = "";
 
@@ -33,7 +33,7 @@ public class ChiyaSecurityExtract {
 		ChiyaHashMapValueMap<Integer, String, Integer> chiyaHashMapValueMap = new ChiyaHashMapValueMap<>();
 		int[] zero = { 0 };
 		// 迭代全部注册的接口
-		requestHandlerMapping.getHandlerMethods().forEach((k, v) -> {
+		requestMappingHandlerMapping.getHandlerMethods().forEach((k, v) -> {
 			int value[] = null;
 			if (v.getMethodAnnotation(ChiyaSecurity.class) != null) { value = v.getMethodAnnotation(ChiyaSecurity.class).value(); }
 			// 注册的接口
@@ -68,7 +68,7 @@ public class ChiyaSecurityExtract {
 		ConcurrentHashMap<String, InterfaceGroup> concurrentHashMap = new ConcurrentHashMap<String, InterfaceGroup>();
 		int[] zero = { 0 };
 		// 迭代全部注册的接口
-		requestHandlerMapping.getHandlerMethods().forEach((k, v) -> {
+		requestMappingHandlerMapping.getHandlerMethods().forEach((k, v) -> {
 			int value[] = null;
 			if (v.getMethodAnnotation(ChiyaSecurityGroup.class) != null) { value = v.getMethodAnnotation(ChiyaSecurityGroup.class).value(); }
 			// 注册的接口
