@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-import chiya.core.base.collection.ChiyaHashMapValueMap;
+import chiya.core.base.collection.ChiyaMap;
 import chiya.core.base.collection.ContainerUtil;
 import chiya.security.Method;
 import chiya.security.annotation.ChiyaSecurity;
@@ -29,8 +29,8 @@ public class ChiyaSecurityExtract {
 	 * 
 	 * @return ChiyaHashMapValueMap<Integer, String, Integer> 角色-地址-请求方式
 	 */
-	public ChiyaHashMapValueMap<Integer, String, Integer> getURL() {
-		ChiyaHashMapValueMap<Integer, String, Integer> chiyaHashMapValueMap = new ChiyaHashMapValueMap<>();
+	public ChiyaMap<Integer, String, Integer> getURL() {
+		ChiyaMap<Integer, String, Integer> chiyaHashMapValueMap = new ChiyaMap<>();
 		int[] zero = { 0 };
 		// 迭代全部注册的接口
 		requestMappingHandlerMapping.getHandlerMethods().forEach((k, v) -> {

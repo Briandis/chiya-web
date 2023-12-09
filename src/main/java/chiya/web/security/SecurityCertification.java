@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import chiya.core.base.collection.ChiyaHashMapValueMap;
+import chiya.core.base.collection.ChiyaMap;
 import chiya.web.security.entity.ChiyaRole;
 import chiya.web.security.entity.InterfaceGroup;
 import chiya.web.security.entity.SecurityInterface;
@@ -22,7 +22,7 @@ import chiya.web.security.entity.SecurityRole;
 public class SecurityCertification {
 
 	/** 角色和接口的存储容器 */
-	public static ChiyaHashMapValueMap<Integer, String, Integer> chiyaHashMapValueMap;
+	public static ChiyaMap<Integer, String, Integer> chiyaHashMapValueMap;
 	/** 接口和接口组的存储容器 */
 	public static ConcurrentHashMap<String, InterfaceGroup> chiyaGroup;
 
