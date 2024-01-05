@@ -15,6 +15,7 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import chiya.core.base.collection.ContainerUtil;
@@ -40,7 +41,7 @@ public class ExcelUtil {
 	public static Workbook getWorkbook(InputStream inputStream) {
 		Workbook workbook = null;
 		try {
-			workbook = new XSSFWorkbook(inputStream);
+			workbook = WorkbookFactory.create(inputStream);
 		} catch (IOException e) {
 			Assert.fail("文件有误");
 		}
