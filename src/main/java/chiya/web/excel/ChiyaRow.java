@@ -64,6 +64,7 @@ public class ChiyaRow {
 	 * @return 字符串
 	 */
 	public String formatString(int index) {
+		if (row == null) { return null; }
 		Cell cell = row.getCell(index);
 		return cell != null ? dataFormatter.formatCellValue(cell) : null;
 	}
@@ -75,6 +76,7 @@ public class ChiyaRow {
 	 * @return 字符串
 	 */
 	public Integer formatInteger(int index) {
+		if (row == null) { return null; }
 		Cell cell = row.getCell(index);
 		return cell != null ? NumberUtil.parseInt(dataFormatter.formatCellValue(cell)) : null;
 	}
@@ -86,6 +88,7 @@ public class ChiyaRow {
 	 * @return 字符串
 	 */
 	public Double formatDouble(int index) {
+		if (row == null) { return null; }
 		Cell cell = row.getCell(index);
 		return cell != null ? NumberUtil.parseDouble(dataFormatter.formatCellValue(cell)) : null;
 	}
