@@ -50,6 +50,11 @@ public class ChiyaRequest {
 		requestHead.put("Content-type", "application/json;charset=utf-8");
 	}
 
+	/** 传输格式为FormData */
+	public void contentTypeFormData() {
+		requestHead.put("Content-type", "application/x-www-form-uriencoded;charset=utf-8");
+	}
+
 	/**
 	 * 获取HTTP链接
 	 * 
@@ -108,7 +113,7 @@ public class ChiyaRequest {
 	 * @return 获取的数据
 	 */
 	public String getResponseHead(String head) {
-		return responseHead.get(head);
+		return getResponseHead(head, 0);
 	}
 
 	/**
@@ -135,11 +140,46 @@ public class ChiyaRequest {
 	/**
 	 * Post方式发送请求数据
 	 * 
+	 * @param url URL地址
+	 * @return 响应数据
+	 */
+	public String post(String url) {
+		HttpPost httpPost = HttpMethod.post(url);
+		return send(httpPost);
+	}
+
+	/**
+	 * Post方式发送请求数据
+	 * 
+	 * @param url  URL地址
+	 * @param data 参数
+	 * @return 响应数据
+	 */
+	public String post(String url, String data) {
+		HttpPost httpPost = HttpMethod.post(url, data);
+		return send(httpPost);
+	}
+
+	/**
+	 * Post方式发送请求数据
+	 * 
 	 * @param url    URL地址
 	 * @param object 参数
 	 * @return 响应数据
 	 */
 	public String post(String url, Object object) {
+		HttpPost httpPost = HttpMethod.post(url, object);
+		return send(httpPost);
+	}
+
+	/**
+	 * Post方式发送请求数据
+	 * 
+	 * @param url    URL地址
+	 * @param object 参数
+	 * @return 响应数据
+	 */
+	public String postJson(String url, Object object) {
 		HttpPost httpPost = HttpMethod.postJson(url, object);
 		return send(httpPost);
 	}
@@ -152,6 +192,18 @@ public class ChiyaRequest {
 	 * @return 响应数据
 	 */
 	public String put(String url, Object object) {
+		HttpPut httpPut = HttpMethod.putJson(url, object);
+		return send(httpPut);
+	}
+
+	/**
+	 * put方式发送请求数据
+	 * 
+	 * @param url    URL地址
+	 * @param object 参数
+	 * @return 响应数据
+	 */
+	public String putJson(String url, Object object) {
 		HttpPut httpPut = HttpMethod.putJson(url, object);
 		return send(httpPut);
 	}
@@ -212,6 +264,32 @@ public class ChiyaRequest {
 	 */
 	public boolean isOK() {
 		return isCode(200);
+	}
+
+	/**
+	 * 获取状HTTP态码
+	 * 
+	 * @return HTTP状态码
+	 */
+	public int getCode() {
+		if (httpResponse != null) { return httpResponse.getStatusLine().getStatusCode(); }
+		return -1;
+	}
+
+	/**
+	 * 获取响应头信息
+	 * 
+	 * @param key   头名称
+	 * @param index 获取的下标
+	 * @return 响应头数据
+	 */
+	public String getResponseHead(String key, int index) {
+		if (httpResponse == null) { return null; }
+		Header[] headers = httpResponse.getHeaders(key);
+		if (headers == null || headers.length == 0) { return null; }
+		if (index < 0) { index = headers.length + index; }
+		if (index < 0 || headers.length > index) { return null; }
+		return headers[index].getValue();
 	}
 
 }

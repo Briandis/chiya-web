@@ -9,6 +9,8 @@ import org.apache.http.entity.StringEntity;
 
 import com.alibaba.fastjson.JSONObject;
 
+import chiya.core.base.object.ObjectUtil;
+
 /**
  * HTTP常用请求处理
  * 
@@ -23,8 +25,26 @@ public class HttpMethod {
 	 * @param object 普通对象
 	 * @return StringEntity
 	 */
-	public static StringEntity toStringEntity(Object object) {
+	public static StringEntity toJsonEntity(Object object) {
 		return new StringEntity(JSONObject.toJSONString(object), "UTF-8");
+	}
+
+	/**
+	 * 生成formData类型数据
+	 * 
+	 * @param object 普通对象
+	 * @return StringEntity
+	 */
+	public static <T> StringEntity toFormDataEntity(Object object) {
+		StringBuilder stringBuilder = new StringBuilder();
+		ObjectUtil.toHashMap(object).forEach((name, value) -> {
+			if (value != null) {
+				if (stringBuilder.length() != 0) { stringBuilder.append("&"); }
+				stringBuilder.append(name).append("=").append(value);
+			}
+		});
+		return new StringEntity(stringBuilder.toString(), "UTF-8");
+
 	}
 
 	/**
@@ -70,7 +90,7 @@ public class HttpMethod {
 	}
 
 	/**
-	 * 创建JSON传输的POST请求
+	 * 创建POST请求
 	 * 
 	 * @param url 请求地址
 	 * @return HttpPost对象
@@ -80,7 +100,7 @@ public class HttpMethod {
 	}
 
 	/**
-	 * 创建JSON传输的POST请求
+	 * 创建POST请求
 	 * 
 	 * @param url  请求地址
 	 * @param data 传输的数据
@@ -89,6 +109,19 @@ public class HttpMethod {
 	public static HttpPost post(String url, String data) {
 		HttpPost httpPost = post(url);
 		if (data != null) { httpPost.setEntity(new StringEntity(data, "UTF-8")); }
+		return httpPost;
+	}
+
+	/**
+	 * 创建POST请求
+	 * 
+	 * @param url  请求地址
+	 * @param data 传输的数据
+	 * @return HttpPost对象
+	 */
+	public static HttpPost post(String url, Object data) {
+		HttpPost httpPost = post(url);
+		if (data != null) { httpPost.setEntity(toFormDataEntity(httpPost)); }
 		return httpPost;
 	}
 
@@ -124,8 +157,44 @@ public class HttpMethod {
 	 */
 	public static HttpPost postJson(String url, Object data) {
 		HttpPost httpPost = postJson(url);
-		if (data != null) { httpPost.setEntity(toStringEntity(data)); }
+		if (data != null) { httpPost.setEntity(toJsonEntity(data)); }
 		return httpPost;
+	}
+
+	/**
+	 * 创建PUT的JSON请求对象
+	 * 
+	 * @param url 请求路径
+	 * @return HttpPut对象
+	 */
+	public static HttpPut put(String url) {
+		return new HttpPut(url);
+	}
+
+	/**
+	 * 创建PUT的JSON请求对象
+	 * 
+	 * @param url  请求路径
+	 * @param data 传输的数据
+	 * @return HttpPut对象
+	 */
+	public static HttpPut put(String url, String data) {
+		HttpPut httpPut = put(url);
+		if (data != null) { httpPut.setEntity(new StringEntity(data, "UTF-8")); }
+		return httpPut;
+	}
+
+	/**
+	 * 创建PUT的JSON请求对象
+	 * 
+	 * @param url  请求路径
+	 * @param data 传输的数据
+	 * @return HttpPut对象
+	 */
+	public static HttpPut put(String url, Object data) {
+		HttpPut httpPut = put(url);
+		if (data != null) { httpPut.setEntity(toFormDataEntity(data)); }
+		return httpPut;
 	}
 
 	/**
@@ -145,22 +214,9 @@ public class HttpMethod {
 	 * @param data 传输的数据
 	 * @return HttpPut对象
 	 */
-	public static HttpPut putJson(String url, String data) {
-		HttpPut httpPut = putJson(url);
-		if (data != null) { httpPut.setEntity(new StringEntity(data, "UTF-8")); }
-		return httpPut;
-	}
-
-	/**
-	 * 创建PUT的JSON请求对象
-	 * 
-	 * @param url  请求路径
-	 * @param data 传输的数据
-	 * @return HttpPut对象
-	 */
 	public static HttpPut putJson(String url, Object data) {
 		HttpPut httpPut = putJson(url);
-		if (data != null) { httpPut.setEntity(toStringEntity(data)); }
+		if (data != null) { httpPut.setEntity(toJsonEntity(data)); }
 		return httpPut;
 	}
 
