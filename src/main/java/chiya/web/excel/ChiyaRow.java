@@ -17,7 +17,7 @@ public class ChiyaRow {
 	/** 表格的行 */
 	private Row row;
 	/** 单元格格式化工具 */
-	private DataFormatter dataFormatter = new DataFormatter();
+	public static final DataFormatter DATA_FORMATTER = new DataFormatter();
 	/** 允许添加 */
 	private boolean allowAdd;
 
@@ -66,7 +66,7 @@ public class ChiyaRow {
 	public String formatString(int index) {
 		if (row == null) { return null; }
 		Cell cell = row.getCell(index);
-		return cell != null ? dataFormatter.formatCellValue(cell) : null;
+		return cell != null ? DATA_FORMATTER.formatCellValue(cell) : null;
 	}
 
 	/**
@@ -78,7 +78,7 @@ public class ChiyaRow {
 	public Integer formatInteger(int index) {
 		if (row == null) { return null; }
 		Cell cell = row.getCell(index);
-		return cell != null ? NumberUtil.parseInt(dataFormatter.formatCellValue(cell)) : null;
+		return cell != null ? NumberUtil.parseInt(DATA_FORMATTER.formatCellValue(cell)) : null;
 	}
 
 	/**
@@ -90,6 +90,6 @@ public class ChiyaRow {
 	public Double formatDouble(int index) {
 		if (row == null) { return null; }
 		Cell cell = row.getCell(index);
-		return cell != null ? NumberUtil.parseDouble(dataFormatter.formatCellValue(cell)) : null;
+		return cell != null ? NumberUtil.parseDouble(DATA_FORMATTER.formatCellValue(cell)) : null;
 	}
 }

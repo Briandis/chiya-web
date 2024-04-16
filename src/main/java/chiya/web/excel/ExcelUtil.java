@@ -12,10 +12,13 @@ import java.util.function.Function;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import chiya.core.base.collection.ContainerUtil;
@@ -249,18 +252,18 @@ public class ExcelUtil {
 	 * 
 	 * @param sheet          sheet页
 	 * @param rowIndex       row坐标，从0计算
-	 * @param CellIndex      cell坐标，从0计算
+	 * @param cellIndex      cell坐标，从0计算
 	 * @param value          写入的对象
 	 * @param formatFunction 格式化方法
 	 */
-	public static void writeValue(Sheet sheet, int rowIndex, int CellIndex, List<Object> value, Function<Object, String> formatFunction) {
+	public static void writeValue(Sheet sheet, int rowIndex, int cellIndex, List<Object> value, Function<Object, String> formatFunction) {
 		if (value != null) {
 			Loop.forEach(value, (obj, index) -> {
 				if (obj != null) {
 					if (formatFunction != null) {
-						writeValue(sheet, rowIndex + index, CellIndex, formatFunction.apply(obj));
+						writeValue(sheet, rowIndex + index, cellIndex, formatFunction.apply(obj));
 					} else {
-						writeValue(sheet, rowIndex + index, CellIndex, obj.toString());
+						writeValue(sheet, rowIndex + index, cellIndex, obj.toString());
 					}
 				}
 			});
@@ -272,11 +275,11 @@ public class ExcelUtil {
 	 * 
 	 * @param sheet     sheet页
 	 * @param rowIndex  row坐标，从0计算
-	 * @param CellIndex cell坐标，从0计算
+	 * @param cellIndex cell坐标，从0计算
 	 * @param value     写入的对象
 	 */
-	public static void writeValue(Sheet sheet, int rowIndex, int CellIndex, List<Object> value) {
-		writeValue(sheet, rowIndex, CellIndex, value, null);
+	public static void writeValue(Sheet sheet, int rowIndex, int cellIndex, List<Object> value) {
+		writeValue(sheet, rowIndex, cellIndex, value, null);
 	}
 
 	/**
@@ -417,10 +420,23 @@ public class ExcelUtil {
 						List<Object> data = dataMap.get(block.getReference());
 						Assert.isTrue(data == null || data.size() == 0, block.getReference() + "的值不存在");
 						writeValue(sheet, block.getRowIndex() + insertCount.getData(), block.getCellIndex(), data, formatFunction.get(block.getFormat()));
+
+						if (block.getMergeDown() > 0) {
+							// 后置处理合并单元格
+							mergeCell(
+								sheet,
+								block.getRowIndex() + insertCount.getData(),
+								block.getCellIndex(),
+								data.size(),
+								true,
+								block.getMergeDown()
+							);
+						}
 					} else if (block.getDefalutValue() != null) {
 						// 根据当前配置写入，并重新计算位置
 						writeValue(sheet, block.getRowIndex() + insertCount.getData(), block.getCellIndex(), block.getDefalutValue());
 					}
+
 				});
 
 				insertCount.addAndGet(insertSize.getData());
@@ -470,5 +486,48 @@ public class ExcelUtil {
 			writeData(list, dataMap, sheet, formatFunctionMap);
 		});
 
+	}
+
+	/**
+	 * 合并单元格
+	 * 
+	 * @param sheet     合并的sheet业
+	 * @param rowIndex  行坐标
+	 * @param cellIndex 列坐标
+	 * @param dataSize  数据大小
+	 * @param dataRow   数据是按照行排布
+	 * @param mergeSize 合并大小
+	 */
+	public static void mergeCell(Sheet sheet, int rowIndex, int cellIndex, int dataSize, boolean dataRow, int mergeSize) {
+		CellStyle style = sheet.getWorkbook().createCellStyle();
+		style.setAlignment(HorizontalAlignment.CENTER); // 水平居中
+		style.setVerticalAlignment(VerticalAlignment.CENTER); // 垂直居中
+		if (dataRow) {
+			Loop.step(dataSize, i -> {
+				Row row = sheet.getRow(rowIndex + i);
+				if (row == null) { row = sheet.createRow(rowIndex + i); }
+				Cell cell = row.getCell(cellIndex);
+				if (cell == null) { cell = row.createCell(cellIndex); }
+				if (!StringUtil.isEmpty(ChiyaRow.DATA_FORMATTER.formatCellValue(cell))) {
+					// 按照行合并
+					sheet.addMergedRegion(new CellRangeAddress(rowIndex + i, rowIndex + i + mergeSize, cellIndex, cellIndex));
+					// 设置样式
+					cell.setCellStyle(style);
+				}
+			});
+		} else {
+			Loop.step(dataSize, i -> {
+				Row row = sheet.getRow(rowIndex);
+				if (row == null) { row = sheet.createRow(rowIndex); }
+				Cell cell = row.getCell(cellIndex + i);
+				if (cell == null) { cell = row.createCell(cellIndex + i); }
+				if (!StringUtil.isEmpty(ChiyaRow.DATA_FORMATTER.formatCellValue(cell))) {
+					// 按照列合并
+					sheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, cellIndex + i, cellIndex + i + mergeSize));
+					// 设置样式
+					cell.setCellStyle(style);
+				}
+			});
+		}
 	}
 }

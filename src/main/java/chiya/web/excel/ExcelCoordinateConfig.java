@@ -31,6 +31,12 @@ public class ExcelCoordinateConfig {
 	/** 所在sheet名称 */
 	private String sheetName;
 
+	// 特殊规则
+	/** 尝试向下合并 */
+	private Integer mergeDown = 0;
+	/** 尝试向右合并 */
+	private Integer mergeRight = 0;
+
 	/** 深层的相对坐标 */
 	private List<ExcelCoordinateConfig> listExcelCoordinateConfig;
 
@@ -336,4 +342,61 @@ public class ExcelCoordinateConfig {
 		return this;
 	}
 
+	/**
+	 * 获取尝试向下合并
+	 * 
+	 * @return 尝试向下合并
+	 */
+	public Integer getMergeDown() {
+		return mergeDown;
+	}
+
+	/**
+	 * 设置尝试向下合并
+	 * 
+	 * @param mergeDown 尝试向下合并
+	 */
+	public void setMergeDown(Integer mergeDown) {
+		this.mergeDown = mergeDown;
+	}
+
+	/**
+	 * 链式添加尝试向下合并
+	 * 
+	 * @param mergeDown 尝试向下合并
+	 * @return 对象本身
+	 */
+	public ExcelCoordinateConfig chainMergeDown(Integer mergeDown) {
+		setMergeDown(mergeDown);
+		return this;
+	}
+
+	/**
+	 * 获取尝试向右合并
+	 * 
+	 * @return 尝试向右合并
+	 */
+	public Integer getMergeRight() {
+		return mergeRight;
+	}
+
+	/**
+	 * 设置尝试向右合并
+	 * 
+	 * @param mergeRight 尝试向右合并
+	 */
+	public void setMergeRight(Integer mergeRight) {
+		this.mergeRight = mergeRight;
+	}
+
+	/**
+	 * 链式添加尝试向右合并
+	 * 
+	 * @param mergeRight 尝试向右合并
+	 * @return 对象本身
+	 */
+	public ExcelCoordinateConfig chainMergeRight(Integer mergeRight) {
+		setMergeRight(mergeRight);
+		return this;
+	}
 }
