@@ -479,7 +479,8 @@ public class ExcelUtil {
 				});
 				// 复制区块
 				Loop.step(maxCount.getData() - 1, index -> {
-					copyRow(start.getData() + index == 0 ? 0 : index * blockSize.getData(), blockSize.getData(), sheet);
+					int countLine = index == 0 ? 0 : index * blockSize.getData();
+					copyRow(insertCount.getData() + config.getRowIndex() + countLine, blockSize.getData(), sheet);
 				});
 				// 按照动态区块进行循环
 				Loop.step(maxCount.getData(), index -> {
