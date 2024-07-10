@@ -36,9 +36,21 @@ public class ExcelCoordinateConfig {
 	private Integer mergeDown = 0;
 	/** 尝试向右合并 */
 	private Integer mergeRight = 0;
+	/** 区块大小 */
+	private Integer blockSize = 0;
 
 	/** 深层的相对坐标 */
 	private List<ExcelCoordinateConfig> listExcelCoordinateConfig;
+
+	/**
+	 * 获取引用组
+	 * 
+	 * @param index 当前组
+	 * @return 引用组
+	 */
+	public String getReferenceGroup(int index) {
+		return reference + "[" + index + "]";
+	}
 
 	/**
 	 * 添加坐标配置
@@ -397,6 +409,35 @@ public class ExcelCoordinateConfig {
 	 */
 	public ExcelCoordinateConfig chainMergeRight(Integer mergeRight) {
 		setMergeRight(mergeRight);
+		return this;
+	}
+
+	/**
+	 * 获取区块大小
+	 * 
+	 * @return 区块大小
+	 */
+	public Integer getBlockSize() {
+		return blockSize;
+	}
+
+	/**
+	 * 设置区块大小
+	 * 
+	 * @param blockSize 区块大小
+	 */
+	public void setBlockSize(Integer blockSize) {
+		this.blockSize = blockSize;
+	}
+
+	/**
+	 * 链式添加区块大小
+	 * 
+	 * @param blockSize 区块大小
+	 * @return 对象本身
+	 */
+	public ExcelCoordinateConfig chainBlockSize(Integer blockSize) {
+		setBlockSize(blockSize);
 		return this;
 	}
 }

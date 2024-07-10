@@ -295,6 +295,18 @@ public class ExcelUtil {
 	}
 
 	/**
+	 * 获取一行中所有数据
+	 * 
+	 * @param row 一行中所有数据
+	 * @return 当前行的列表
+	 */
+	public static HashMap<Integer, String> getRowValue(Row row) {
+		HashMap<Integer, String> listData = new HashMap<>();
+		if (row != null) { row.forEach(cell -> listData.put(cell.getColumnIndex(), ChiyaRow.DATA_FORMATTER.formatCellValue(cell))); }
+		return listData;
+	}
+
+	/**
 	 * 设置改行的样式
 	 * 
 	 * @param row     样式
@@ -306,6 +318,22 @@ public class ExcelUtil {
 				Cell cell = row.getCell(index);
 				if (cell == null) { cell = row.createCell(index); }
 				cell.setCellStyle(cellStyle);
+			}
+		});
+	}
+
+	/**
+	 * 设置单元格的值
+	 * 
+	 * @param row     样式
+	 * @param hashMap 每个单元格的值
+	 */
+	public static void setRowValue(Row row, HashMap<Integer, String> hashMap) {
+		hashMap.forEach((index, data) -> {
+			if (data != null) {
+				Cell cell = row.getCell(index);
+				if (cell == null) { cell = row.createCell(index); }
+				cell.setCellValue(data.toString());
 			}
 		});
 	}
@@ -325,6 +353,34 @@ public class ExcelUtil {
 			Row row = sheet.getRow(i);
 			if (row == null) { row = sheet.createRow(i); }
 			setRowStyle(row, hashMap);
+		}
+	}
+
+	/**
+	 * 复制行
+	 * 
+	 * @param startRow 起始行
+	 * @param count    复制行数
+	 * @param sheet    当前操作的sheet页
+	 */
+	public static void copyRow(int startRow, int count, Sheet sheet) {
+		List<HashMap<Integer, CellStyle>> listStyle = new ArrayList<>();
+		List<HashMap<Integer, String>> listData = new ArrayList<>();
+		Loop.step(count, index -> {
+			Row row = sheet.getRow(startRow + index);
+			listStyle.add(getRowStyle(row));
+			listData.add(getRowValue(row));
+		});
+		if (sheet.getRow(startRow) == null || count == 0) { return; }
+
+		sheet.shiftRows(startRow, sheet.getLastRowNum(), count);
+
+		for (int i = startRow; i < startRow + count; i++) {
+			Row row = sheet.getRow(i);
+			if (row == null) { row = sheet.createRow(i); }
+			setRowStyle(row, listStyle.get(i - startRow));
+			setRowValue(row, listData.get(i - startRow));
+
 		}
 	}
 
@@ -398,6 +454,79 @@ public class ExcelUtil {
 					y.addAndGet(config.getSpacing());
 				});
 				insertCount.addAndGet(insertSize);
+			} else if (StringUtil.eqString(config.getType(), "DynamicBlocks")) {
+				// 计算插入行数，需要找到起始的列并计算差值
+				IntegerPack insertSize = new IntegerPack();
+				IntegerPack start = new IntegerPack();
+				HashMap<String, Integer> groupCount = new HashMap<>();
+				IntegerPack maxCount = new IntegerPack();
+				IntegerPack blockSize = new IntegerPack(config.getBlockSize());
+
+				// 检查区块内的引用字段产生的区块数量
+				config.getListExcelCoordinateConfig().forEach(block -> {
+					if (block.getReference() != null) {
+						int count = 0;
+						while (block.getReference() != null && dataMap.containsKey(block.getReferenceGroup(count))) {
+							count++;
+						}
+						groupCount.put(block.getReference(), count);
+						if (maxCount.getData() < count) { maxCount.setData(count); }
+					}
+					if (blockSize.getData() < block.getRowIndex() - config.getRowIndex()) {
+						// 计算区块位置与实际内部字段的位置差，如果设置的size小于实际的，则遵循内部声明的位置计算差值
+						blockSize.setData(block.getRowIndex() - config.getRowIndex());
+					}
+				});
+				// 复制区块
+				Loop.step(maxCount.getData() - 1, index -> {
+					copyRow(start.getData() + index == 0 ? 0 : index * blockSize.getData(), blockSize.getData(), sheet);
+				});
+				// 按照动态区块进行循环
+				Loop.step(maxCount.getData(), index -> {
+					if (index != 0) {
+						// 计算由于动态区块引发的坐标漂移
+						insertCount.addAndGet(blockSize.getData());
+					}
+					// 计算要插入的行数
+					config.getListExcelCoordinateConfig().forEach(block -> {
+						if (block.getReference() != null) {
+							if (start.getData() < block.getRowIndex()) { start.setData(block.getRowIndex()); }
+							List<Object> data = dataMap.get(block.getReferenceGroup(index));
+							if (data != null && data.size() + block.getRowIndex() > insertSize.getData()) { insertSize.setData(data.size() + block.getRowIndex()); }
+						}
+					});
+					insertSize.setData(insertSize.getData() - start.getData() - 1);
+					// 先插入行数
+					if (insertSize.getData() < 0) { insertSize.setData(0); }
+					insertRow(start.getData() + insertCount.getData(), insertSize.getData(), sheet);
+
+					Loop.forEach(config.getListExcelCoordinateConfig(), (block, count) -> {
+						if (block.getReference() != null) {
+							List<Object> data = dataMap.get(block.getReferenceGroup(index));
+							Assert.isTrue(data == null || data.size() == 0, block.getReferenceGroup(index) + "的值不存在");
+							writeValue(sheet, block.getRowIndex() + insertCount.getData(), block.getCellIndex(), data, formatFunction.get(block.getFormat()));
+
+							if (block.getMergeDown() > 0) {
+								// 后置处理合并单元格
+								mergeCell(
+									sheet,
+									block.getRowIndex() + insertCount.getData(),
+									block.getCellIndex(),
+									data.size(),
+									true,
+									block.getMergeDown()
+								);
+							}
+						} else if (block.getDefalutValue() != null) {
+							// 根据当前配置写入，并重新计算位置
+							writeValue(sheet, block.getRowIndex() + insertCount.getData(), block.getCellIndex(), block.getDefalutValue());
+						}
+
+					});
+
+					insertCount.addAndGet(insertSize.getData());
+				});
+
 			} else {
 				// 普通情况
 				// 计算插入行数，需要找到起始的列并计算差值
