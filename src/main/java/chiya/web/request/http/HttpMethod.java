@@ -121,7 +121,7 @@ public class HttpMethod {
 	 */
 	public static HttpPost post(String url, Object data) {
 		HttpPost httpPost = post(url);
-		if (data != null) { httpPost.setEntity(toFormDataEntity(httpPost)); }
+		if (data != null) { httpPost.setEntity(toFormDataEntity(data)); }
 		return httpPost;
 	}
 
