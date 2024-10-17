@@ -21,12 +21,11 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import chiya.core.base.collection.ContainerUtil;
 import chiya.core.base.exception.Assert;
 import chiya.core.base.loop.Loop;
-import chiya.core.base.number.NumberUtil;
 import chiya.core.base.pack.IntegerPack;
 import chiya.core.base.string.StringUtil;
+import chiya.web.excel.rendering.RenderingExcel;
 
 /**
  * Excel工具库
@@ -348,8 +347,8 @@ public class ExcelUtil {
 	public static void insertRow(int start, int count, Sheet sheet) {
 		HashMap<Integer, CellStyle> hashMap = getRowStyle(sheet.getRow(start));
 		if (sheet.getRow(start) == null || count == 0) { return; }
-		sheet.shiftRows(start, sheet.getLastRowNum(), count);
-		for (int i = start; i < start + count; i++) {
+		sheet.shiftRows(start + 1, sheet.getLastRowNum(), count);
+		for (int i = start; i < start + count + 1; i++) {
 			Row row = sheet.getRow(i);
 			if (row == null) { row = sheet.createRow(i); }
 			setRowStyle(row, hashMap);
@@ -397,181 +396,9 @@ public class ExcelUtil {
 		if (formatFunctionMap == null) { formatFunctionMap = new HashMap<>(); }
 		Map<String, Function<Object, String>> formatFunction = formatFunctionMap;
 		// 对配置进行排序，按照区块标记的行号排序
-		listConfit = ContainerUtil.listSort(listConfit, (o1, o2) -> {
-			IntegerPack a = new IntegerPack(-1);
-			IntegerPack b = new IntegerPack(-1);
-			if (!StringUtil.eqString(o1.getType(), "flow")) {
-				o1.getListExcelCoordinateConfig().forEach(obj -> {
-					if (a.getData() == -1) { a.setData(obj.getRowIndex()); }
-					if (obj.getRowIndex() < a.getData()) { a.setData(obj.getRowIndex()); }
-				});
-			} else {
-				a.setData(o1.getRowIndex());
-			}
-			if (!StringUtil.eqString(o2.getType(), "flow")) {
-				o2.getListExcelCoordinateConfig().forEach(obj -> {
-					if (b.getData() == -1) { b.setData(obj.getRowIndex()); }
-					if (obj.getRowIndex() < b.getData()) { b.setData(obj.getRowIndex()); }
-				});
-			} else {
-				b.setData(o2.getRowIndex());
-			}
-
-			return NumberUtil.compareSize(a.getData(), b.getData());
-		});
+		listConfit.sort((a, b) -> RenderingExcel.getBlockRow(a) - RenderingExcel.getBlockRow(b));
 		IntegerPack insertCount = new IntegerPack();
-		listConfit.forEach(config -> {
-			// 流式布局处理
-			if (StringUtil.eqString(config.getType(), "flow")) {
-				// 计算插入行数
-				int size = config.getListExcelCoordinateConfig().size();
-				int insertSize = size % config.getLineCount() != 0 ? size / config.getLineCount() : size / config.getLineCount() + 1;
-
-				// 先插入行数
-				insertRow(config.getRowIndex(), insertSize, sheet);
-
-				IntegerPack x = new IntegerPack(config.getRowIndex() + insertCount.getData());
-				IntegerPack y = new IntegerPack(config.getCellIndex());
-
-				Loop.forEach(config.getListExcelCoordinateConfig(), (block, count) -> {
-					// 每行数量达到设置上限后换行
-					if (count != 0 && count % config.getLineCount() == 0) {
-						x.incrementAndGet();
-						y.setData(config.getCellIndex());
-					}
-					block.getListExcelCoordinateConfig().forEach(excelConfig -> {
-						if (excelConfig.getReference() != null) {
-							List<Object> data = dataMap.get(excelConfig.getReference());
-							Assert.isTrue(data == null || data.size() == 0, excelConfig.getReference() + "的值不存在");
-							writeValue(sheet, x.getData(), y.getData(), data, formatFunction.get(excelConfig.getFormat()));
-
-						} else if (excelConfig.getDefalutValue() != null) {
-							// 如果不存在引用 则写入默认值
-							writeValue(sheet, x.getData(), y.getData(), excelConfig.getDefalutValue());
-						}
-						y.incrementAndGet();
-					});
-					y.addAndGet(config.getSpacing());
-				});
-				insertCount.addAndGet(insertSize);
-			} else if (StringUtil.eqString(config.getType(), "DynamicBlocks")) {
-				// 计算插入行数，需要找到起始的列并计算差值
-				IntegerPack insertSize = new IntegerPack();
-				IntegerPack start = new IntegerPack();
-				HashMap<String, Integer> groupCount = new HashMap<>();
-				IntegerPack maxCount = new IntegerPack();
-				IntegerPack blockSize = new IntegerPack(config.getBlockSize());
-
-				// 检查区块内的引用字段产生的区块数量
-				config.getListExcelCoordinateConfig().forEach(block -> {
-					if (block.getReference() != null) {
-						int count = 0;
-						while (block.getReference() != null && dataMap.containsKey(block.getReferenceGroup(count))) {
-							count++;
-						}
-						groupCount.put(block.getReference(), count);
-						if (maxCount.getData() < count) { maxCount.setData(count); }
-					}
-					if (blockSize.getData() < block.getRowIndex() - config.getRowIndex()) {
-						// 计算区块位置与实际内部字段的位置差，如果设置的size小于实际的，则遵循内部声明的位置计算差值
-						blockSize.setData(block.getRowIndex() - config.getRowIndex());
-					}
-				});
-				// 复制区块
-				Loop.step(maxCount.getData() - 1, index -> {
-					int countLine = index == 0 ? 0 : index * blockSize.getData();
-					copyRow(insertCount.getData() + config.getRowIndex() + countLine, blockSize.getData(), sheet);
-				});
-				// 按照动态区块进行循环
-				Loop.step(maxCount.getData(), index -> {
-					if (index != 0) {
-						// 计算由于动态区块引发的坐标漂移
-						insertCount.addAndGet(blockSize.getData());
-					}
-					// 计算要插入的行数
-					config.getListExcelCoordinateConfig().forEach(block -> {
-						if (block.getReference() != null) {
-							if (start.getData() < block.getRowIndex()) { start.setData(block.getRowIndex()); }
-							List<Object> data = dataMap.get(block.getReferenceGroup(index));
-							if (data != null && data.size() + block.getRowIndex() > insertSize.getData()) { insertSize.setData(data.size() + block.getRowIndex()); }
-						}
-					});
-					insertSize.setData(insertSize.getData() - start.getData() - 1);
-					// 先插入行数
-					if (insertSize.getData() < 0) { insertSize.setData(0); }
-					insertRow(start.getData() + insertCount.getData(), insertSize.getData(), sheet);
-
-					Loop.forEach(config.getListExcelCoordinateConfig(), (block, count) -> {
-						if (block.getReference() != null) {
-							List<Object> data = dataMap.get(block.getReferenceGroup(index));
-							Assert.isTrue(data == null || data.size() == 0, block.getReferenceGroup(index) + "的值不存在");
-							writeValue(sheet, block.getRowIndex() + insertCount.getData(), block.getCellIndex(), data, formatFunction.get(block.getFormat()));
-
-							if (block.getMergeDown() > 0) {
-								// 后置处理合并单元格
-								mergeCell(
-									sheet,
-									block.getRowIndex() + insertCount.getData(),
-									block.getCellIndex(),
-									data.size(),
-									true,
-									block.getMergeDown()
-								);
-							}
-						} else if (block.getDefalutValue() != null) {
-							// 根据当前配置写入，并重新计算位置
-							writeValue(sheet, block.getRowIndex() + insertCount.getData(), block.getCellIndex(), block.getDefalutValue());
-						}
-
-					});
-
-					insertCount.addAndGet(insertSize.getData());
-				});
-
-			} else {
-				// 普通情况
-				// 计算插入行数，需要找到起始的列并计算差值
-				IntegerPack insertSize = new IntegerPack();
-				IntegerPack start = new IntegerPack();
-				config.getListExcelCoordinateConfig().forEach(block -> {
-					if (block.getReference() != null) {
-						if (start.getData() < block.getRowIndex()) { start.setData(block.getRowIndex()); }
-						List<Object> data = dataMap.get(block.getReference());
-						if (data != null && data.size() + block.getRowIndex() > insertSize.getData()) { insertSize.setData(data.size() + block.getRowIndex()); }
-					}
-				});
-				insertSize.setData(insertSize.getData() - start.getData() - 1);
-				// 先插入行数
-				if (insertSize.getData() < 0) { insertSize.setData(0); }
-				insertRow(start.getData() + insertCount.getData(), insertSize.getData(), sheet);
-
-				Loop.forEach(config.getListExcelCoordinateConfig(), (block, count) -> {
-					if (block.getReference() != null) {
-						List<Object> data = dataMap.get(block.getReference());
-						Assert.isTrue(data == null || data.size() == 0, block.getReference() + "的值不存在");
-						writeValue(sheet, block.getRowIndex() + insertCount.getData(), block.getCellIndex(), data, formatFunction.get(block.getFormat()));
-
-						if (block.getMergeDown() > 0) {
-							// 后置处理合并单元格
-							mergeCell(
-								sheet,
-								block.getRowIndex() + insertCount.getData(),
-								block.getCellIndex(),
-								data.size(),
-								true,
-								block.getMergeDown()
-							);
-						}
-					} else if (block.getDefalutValue() != null) {
-						// 根据当前配置写入，并重新计算位置
-						writeValue(sheet, block.getRowIndex() + insertCount.getData(), block.getCellIndex(), block.getDefalutValue());
-					}
-
-				});
-
-				insertCount.addAndGet(insertSize.getData());
-			}
-		});
+		listConfit.forEach(config -> RenderingExcel.getRendering(config).rendering(config, dataMap, sheet, formatFunction, insertCount));
 	}
 
 	/**
