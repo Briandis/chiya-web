@@ -347,7 +347,9 @@ public class ExcelUtil {
 	public static void insertRow(int start, int count, Sheet sheet) {
 		HashMap<Integer, CellStyle> hashMap = getRowStyle(sheet.getRow(start));
 		if (sheet.getRow(start) == null || count == 0) { return; }
-		sheet.shiftRows(start + 1, sheet.getLastRowNum(), count);
+		int temp = start == sheet.getLastRowNum() ? sheet.getLastRowNum() + 1 : sheet.getLastRowNum();
+		sheet.shiftRows(start + 1, temp, count);
+
 		for (int i = start; i < start + count + 1; i++) {
 			Row row = sheet.getRow(i);
 			if (row == null) { row = sheet.createRow(i); }

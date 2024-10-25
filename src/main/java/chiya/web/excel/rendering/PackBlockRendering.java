@@ -71,6 +71,8 @@ public class PackBlockRendering implements BaseRenderingExcel {
 			packConfig.getListExcelCoordinateConfig().forEach(block -> {
 				// 起始位置在区块中重复执行需要清零处理，不然会出现计算错误
 				start.setData(0);
+				insertSize.setData(0);
+				
 				// 计算要插入的行数
 				block.getListExcelCoordinateConfig().forEach(reference -> {
 					if (reference.getReference() != null) {
