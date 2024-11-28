@@ -381,7 +381,30 @@ public class ExcelUtil {
 			if (row == null) { row = sheet.createRow(i); }
 			setRowStyle(row, listStyle.get(i - startRow));
 			setRowValue(row, listData.get(i - startRow));
+			copyMergedRegions(sheet, i + count, i);
+		}
+	}
 
+	/**
+	 * 复制合并信息
+	 * 
+	 * @param sourceSheet    当前数据源
+	 * @param sourceRowIndex 原始目标行
+	 * @param targetRowIndex 目标行
+	 */
+	private static void copyMergedRegions(Sheet sourceSheet, int sourceRowIndex, int targetRowIndex) {
+		for (int i = 0; i < sourceSheet.getNumMergedRegions(); i++) {
+			CellRangeAddress range = sourceSheet.getMergedRegion(i);
+			if (range.getFirstRow() == sourceRowIndex) {
+				// 创建新的合并区域
+				CellRangeAddress newRange = new CellRangeAddress(
+					targetRowIndex,
+					targetRowIndex + (range.getLastRow() - range.getFirstRow()),
+					range.getFirstColumn(),
+					range.getLastColumn()
+				);
+				sourceSheet.addMergedRegion(newRange);
+			}
 		}
 	}
 
