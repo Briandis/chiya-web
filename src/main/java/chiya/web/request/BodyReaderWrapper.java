@@ -46,7 +46,10 @@ public class BodyReaderWrapper extends HttpServletRequestWrapper {
 		// 参数转化
 		params.putAll(request.getParameterMap());
 		// 是JSON的就转成普通的key-value的方式
-		if (StringUtil.findString(request.getContentType(), TYPE) != -1) { addAllParameters(JSONObject.parseObject(sessionStream)); }
+		if (StringUtil.findString(request.getContentType(), TYPE) != -1) {
+			// 处理List
+			if (!JSONObject.isValidArray(sessionStream)) { addAllParameters(JSONObject.parseObject(sessionStream)); }
+		}
 	}
 
 	/**
