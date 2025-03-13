@@ -95,6 +95,12 @@
 			<artifactId>jackson-databind</artifactId>
 			<version>2.11.0</version>
 		</dependency>
+        <!-- Netty 核心依赖 -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>4.1.100.Final</version>
+        </dependency>
 	</dependencies>
 
 </project>

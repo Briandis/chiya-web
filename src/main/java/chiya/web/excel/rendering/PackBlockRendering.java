@@ -7,6 +7,7 @@ import java.util.function.Function;
 
 import org.apache.poi.ss.usermodel.Sheet;
 
+import chiya.core.base.constant.ChiyaConstant;
 import chiya.core.base.exception.Assert;
 import chiya.core.base.loop.Loop;
 import chiya.core.base.pack.IntegerPack;
@@ -36,6 +37,13 @@ public class PackBlockRendering implements BaseRenderingExcel {
 		HashMap<String, Integer> groupCount = new HashMap<>();
 		IntegerPack maxCount = new IntegerPack();
 		IntegerPack blockSize = new IntegerPack(packConfig.getBlockSize());
+		IntegerPack blockWidth = new IntegerPack(packConfig.getBlockWidth());
+		IntegerPack blockCellCount = new IntegerPack(0);
+		IntegerPack tempInsertCount = new IntegerPack(0);
+		IntegerPack allTempInserMaxCount = new IntegerPack(0);
+
+		boolean leftRightFlag = packConfig.getDirection() == ChiyaConstant.Direction.LEFT || packConfig.getDirection() == ChiyaConstant.Direction.RIGHT;
+		boolean upDownFlag = packConfig.getDirection() == ChiyaConstant.Direction.UP || packConfig.getDirection() == ChiyaConstant.Direction.DOWN;
 
 		// 内部可能包含多个子区块，所以需要统计内部所有的
 		packConfig.getListExcelCoordinateConfig().forEach(config -> {
@@ -56,47 +64,100 @@ public class PackBlockRendering implements BaseRenderingExcel {
 			});
 		});
 
-		// 复制区块
-		Loop.step(maxCount.getData() - 1, index -> {
-			int countLine = index == 0 ? 0 : index * blockSize.getData();
-			ExcelUtil.copyRow(insertCount.getData() + packConfig.getRowIndex() + countLine, blockSize.getData(), sheet);
-		});
+		// 检查渲染方向
+		if (upDownFlag) {
+			// 复制区块，纵向复制
+			// 先复制未渲染区块行，该阶段不需要考虑数据行数
+			Loop.step(maxCount.getData() - 1, index -> {
+				int countLine = index == 0 ? 0 : index * blockSize.getData();
+				ExcelUtil.copyRow(insertCount.getData() + packConfig.getRowIndex() + countLine, blockSize.getData(), sheet);
+			});
+		} else if (leftRightFlag) {
+			// 横向复制
+			Loop.step(maxCount.getData() - 1, index -> {
+				int countLine = (index + 1) * blockWidth.getData();
+				// 复制的时候应当考虑到之前新增的行数导致的偏移
+				ExcelUtil.copy(
+					packConfig.getRowIndex() + insertCount.getData(),
+					packConfig.getCellIndex(),
+					packConfig.getBlockSize(),
+					packConfig.getBlockWidth(),
+					packConfig.getRowIndex() + insertCount.getData(),
+					countLine,
+					sheet,
+					sheet
+				);
+			});
+		}
 		// 按照动态区块进行循环
 		Loop.step(maxCount.getData(), index -> {
 			if (index != 0) {
-				// 计算由于动态区块引发的坐标漂移
-				insertCount.addAndGet(blockSize.getData());
+				if (upDownFlag) {
+					// 计算由于动态区块引发的坐标漂移
+					insertCount.addAndGet(blockSize.getData());
+				}
+				if (leftRightFlag) {
+					// 计算由于动态区块引发的坐标漂移
+					blockCellCount.addAndGet(packConfig.getBlockWidth());
+					tempInsertCount.setData(0);
+				}
 			}
+
 			// 进入深层坐标
 			packConfig.getListExcelCoordinateConfig().forEach(block -> {
 				// 起始位置在区块中重复执行需要清零处理，不然会出现计算错误
 				start.setData(0);
 				insertSize.setData(0);
-				
+
 				// 计算要插入的行数
 				block.getListExcelCoordinateConfig().forEach(reference -> {
 					if (reference.getReference() != null) {
 						if (start.getData() < reference.getRowIndex()) { start.setData(reference.getRowIndex()); }
 						List<Object> data = dataMap.get(reference.getReferenceGroup(index));
-						if (data != null && data.size() + reference.getRowIndex() > insertSize.getData()) { insertSize.setData(data.size() + reference.getRowIndex()); }
+						if (data != null && data.size() + reference.getRowIndex() > insertSize.getData()
+							&& (reference.getDirection() == ChiyaConstant.Direction.UP || reference.getDirection() == ChiyaConstant.Direction.DOWN)) {
+							insertSize.setData(data.size() + reference.getRowIndex());
+						}
 					}
 				});
 				insertSize.setData(insertSize.getData() - start.getData() - 1);
 				// 先插入行数
 				if (insertSize.getData() < 0) { insertSize.setData(0); }
-				ExcelUtil.insertRow(start.getData() + insertCount.getData(), insertSize.getData(), sheet);
+
+				if (upDownFlag) {
+					// 只有纵向渲染的时候才进行行复制
+					ExcelUtil.insertRow(start.getData() + insertCount.getData() + tempInsertCount.getData(), insertSize.getData(), sheet);
+				}
+				if (leftRightFlag) {
+					// 左右排布下插入需要忽略某些行
+					ExcelUtil.insertRow(start.getData() + insertCount.getData() + tempInsertCount.getData(), insertSize.getData(), sheet);
+					ExcelUtil.moveUpColumn(
+						sheet,
+						packConfig.getCellIndex() + (index * packConfig.getBlockWidth()),
+						packConfig.getCellIndex() + packConfig.getBlockWidth() + (index * packConfig.getBlockWidth()),
+						start.getData() + insertCount.getData() + 1 + tempInsertCount.getData(),
+						insertSize.getData()
+					);
+				}
 
 				block.getListExcelCoordinateConfig().forEach(reference -> {
 					if (reference.getReference() != null) {
 						List<Object> data = dataMap.get(reference.getReferenceGroup(index));
 						Assert.isTrue(data == null || data.size() == 0, reference.getReferenceGroup(index) + "的值不存在");
-						ExcelUtil.writeValue(sheet, reference.getRowIndex() + insertCount.getData(), reference.getCellIndex(), data, formatFunction.get(reference.getFormat()));
+						ExcelUtil.writeValue(
+							sheet,
+							reference.getRowIndex() + insertCount.getData() + tempInsertCount.getData(),
+							reference.getCellIndex() + blockCellCount.getData(),
+							data,
+							formatFunction.get(reference.getFormat()),
+							reference.getDirection()
+						);
 						if (reference.getMergeDown() > 0) {
 							// 后置处理合并单元格
 							ExcelUtil.mergeCell(
 								sheet,
-								reference.getRowIndex() + insertCount.getData(),
-								reference.getCellIndex(),
+								reference.getRowIndex() + insertCount.getData() + tempInsertCount.getData(),
+								reference.getCellIndex() + blockCellCount.getData(),
 								data.size(),
 								true,
 								reference.getMergeDown()
@@ -104,15 +165,36 @@ public class PackBlockRendering implements BaseRenderingExcel {
 						}
 					} else if (reference.getDefalutValue() != null) {
 						// 根据当前配置写入，并重新计算位置
-						ExcelUtil.writeValue(sheet, reference.getRowIndex() + insertCount.getData(), reference.getCellIndex(), reference.getDefalutValue());
+						ExcelUtil.writeValue(
+							sheet,
+							reference.getRowIndex() + insertCount.getData() + tempInsertCount.getData(),
+							reference.getCellIndex() + blockCellCount.getData(),
+							reference.getDefalutValue()
+						);
 					}
 
 				});
 
-				insertCount.addAndGet(insertSize.getData());
+				if (upDownFlag) {
+					// 只有这两个方向的时候才做行增加
+					// 包装去看内的区块方向先不考虑，默认为普通区块
+					insertCount.addAndGet(insertSize.getData());
+				}
+				if (leftRightFlag) {
+					// 左右复制使用临时
+					tempInsertCount.addAndGet(insertSize.getData());
+				}
 
 			});
+			if (tempInsertCount.getData() > allTempInserMaxCount.getData()) {
+				// 存储插入的最大行数
+				allTempInserMaxCount.setData(tempInsertCount.getData());
+			}
 		});
+		if (leftRightFlag) {
+			// 在渲染完该区块后再累加插入行数，因为横向，所以只记录最大插入
+			insertCount.addAndGet(allTempInserMaxCount.getData());
+		}
 	}
 
 	/**

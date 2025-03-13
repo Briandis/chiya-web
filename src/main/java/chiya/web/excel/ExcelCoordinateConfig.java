@@ -3,6 +3,8 @@ package chiya.web.excel;
 import java.util.ArrayList;
 import java.util.List;
 
+import chiya.core.base.constant.ChiyaConstant;
+
 /**
  * Excel坐标配置
  * 
@@ -30,6 +32,8 @@ public class ExcelCoordinateConfig {
 	private Integer spacing;
 	/** 所在sheet名称 */
 	private String sheetName;
+	/** 方向,对应上下左右,0,1,2,3 */
+	private Integer direction = ChiyaConstant.Direction.DOWN;
 
 	// 特殊规则
 	/** 尝试向下合并 */
@@ -38,6 +42,8 @@ public class ExcelCoordinateConfig {
 	private Integer mergeRight = 0;
 	/** 区块大小 */
 	private Integer blockSize = 0;
+	/** 区块宽度 */
+	private Integer blockWidth = 0;
 
 	/** 深层的相对坐标 */
 	private List<ExcelCoordinateConfig> listExcelCoordinateConfig;
@@ -440,4 +446,63 @@ public class ExcelCoordinateConfig {
 		setBlockSize(blockSize);
 		return this;
 	}
+
+	/**
+	 * 获取方向
+	 * 
+	 * @return 方向
+	 */
+	public Integer getDirection() {
+		return direction;
+	}
+
+	/**
+	 * 设置方向
+	 * 
+	 * @param direction 方向,对应上下左右,0,1,2,3
+	 */
+	public void setDirection(Integer direction) {
+		this.direction = direction;
+	}
+
+	/**
+	 * 链式添加方向
+	 * 
+	 * @param direction 方向,对应上下左右,0,1,2,3
+	 * @return 对象本身
+	 */
+	public ExcelCoordinateConfig chainDirection(Integer direction) {
+		setDirection(direction);
+		return this;
+	}
+
+	/**
+	 * 获取区域宽度
+	 * 
+	 * @return 区域宽度
+	 */
+	public Integer getBlockWidth() {
+		return blockWidth;
+	}
+
+	/**
+	 * 设置区域宽度
+	 * 
+	 * @param blockWidth 区域宽度
+	 */
+	public void setBlockWidth(Integer blockWidth) {
+		this.blockWidth = blockWidth;
+	}
+
+	/**
+	 * 链式添加区域宽度
+	 * 
+	 * @param blockWidth 区域宽度
+	 * @return 对象本身
+	 */
+	public ExcelCoordinateConfig chainBlockWidth(Integer blockWidth) {
+		setBlockWidth(blockWidth);
+		return this;
+	}
+
 }

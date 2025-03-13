@@ -11,7 +11,8 @@ import chiya.core.base.pack.IntegerPack;
 import chiya.web.excel.ExcelCoordinateConfig;
 
 /**
- * 基础抽象渲染EXCEL
+ * 基础抽象渲染EXCEL<br>
+ * 渲染原则，区块内的坐标是绝对的，区块和区块之间是相对的
  * 
  * @author chiya
  *

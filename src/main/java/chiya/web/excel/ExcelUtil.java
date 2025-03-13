@@ -21,6 +21,7 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import chiya.core.base.constant.ChiyaConstant;
 import chiya.core.base.exception.Assert;
 import chiya.core.base.loop.Loop;
 import chiya.core.base.pack.IntegerPack;
@@ -254,19 +255,51 @@ public class ExcelUtil {
 	 * @param cellIndex      cell坐标，从0计算
 	 * @param value          写入的对象
 	 * @param formatFunction 格式化方法
+	 * @param direction      渲染方向
 	 */
-	public static void writeValue(Sheet sheet, int rowIndex, int cellIndex, List<Object> value, Function<Object, String> formatFunction) {
+	public static void writeValue(Sheet sheet, int rowIndex, int cellIndex, List<Object> value, Function<Object, String> formatFunction, int direction) {
 		if (value != null) {
 			Loop.forEach(value, (obj, index) -> {
 				if (obj != null) {
-					if (formatFunction != null) {
-						writeValue(sheet, rowIndex + index, cellIndex, formatFunction.apply(obj));
-					} else {
-						writeValue(sheet, rowIndex + index, cellIndex, obj.toString());
+					int xOffset = 0;
+					int yOffset = 0;
+					if (direction == ChiyaConstant.Direction.UP) {
+						// 上
+						xOffset = -index;
+					} else if (direction == ChiyaConstant.Direction.DOWN) {
+						// 下
+						xOffset = index;
+					} else if (direction == ChiyaConstant.Direction.LEFT) {
+						// 左
+						yOffset = -index;
+					} else if (direction == ChiyaConstant.Direction.RIGHT) {
+						// 右
+						yOffset = index;
 					}
+					Assert.isTrue(rowIndex + xOffset < 0, "行索引小于0,方向向上，坐标" + rowIndex + " " + cellIndex + "数据：" + value);
+					Assert.isTrue(cellIndex + yOffset < 0, "列索引小于0，方向向左，坐标" + rowIndex + " " + cellIndex + "数据：" + value);
+					writeValue(
+						sheet,
+						rowIndex + xOffset,
+						cellIndex + yOffset,
+						formatFunction != null ? formatFunction.apply(obj) : obj.toString()
+					);
 				}
 			});
 		}
+	}
+
+	/**
+	 * 向指定单元格中写入数据
+	 * 
+	 * @param sheet          sheet页
+	 * @param rowIndex       row坐标，从0计算
+	 * @param cellIndex      cell坐标，从0计算
+	 * @param value          写入的对象
+	 * @param formatFunction 格式化方法
+	 */
+	public static void writeValue(Sheet sheet, int rowIndex, int cellIndex, List<Object> value, Function<Object, String> formatFunction) {
+		writeValue(sheet, rowIndex, cellIndex, value, formatFunction, ChiyaConstant.Direction.DOWN);
 	}
 
 	/**
@@ -294,6 +327,25 @@ public class ExcelUtil {
 	}
 
 	/**
+	 * 获取行的样式
+	 * 
+	 * @param row   行信息
+	 * @param start 起始位置
+	 * @param end   结束位置
+	 * @return 行每个单元格的样式
+	 */
+	public static HashMap<Integer, CellStyle> getRowStyle(Row row, int start, int end) {
+		HashMap<Integer, CellStyle> hashMap = new HashMap<>();
+		if (row != null) {
+			for (int index = start; index < end; index++) {
+				Cell cell = row.getCell(index);
+				if (cell != null) { hashMap.put(cell.getColumnIndex(), cell.getCellStyle()); }
+			}
+		}
+		return hashMap;
+	}
+
+	/**
 	 * 获取一行中所有数据
 	 * 
 	 * @param row 一行中所有数据
@@ -302,6 +354,25 @@ public class ExcelUtil {
 	public static HashMap<Integer, String> getRowValue(Row row) {
 		HashMap<Integer, String> listData = new HashMap<>();
 		if (row != null) { row.forEach(cell -> listData.put(cell.getColumnIndex(), ChiyaRow.DATA_FORMATTER.formatCellValue(cell))); }
+		return listData;
+	}
+
+	/**
+	 * 获取行中所有数据
+	 * 
+	 * @param row   一行中所有数据
+	 * @param start 起始位置
+	 * @param end   结束位置
+	 * @return 当前行的列表
+	 */
+	public static HashMap<Integer, String> getRowValue(Row row, int start, int end) {
+		HashMap<Integer, String> listData = new HashMap<>();
+		if (row != null) {
+			for (int index = start; index < end; index++) {
+				Cell cell = row.getCell(index);
+				if (cell != null) { listData.put(cell.getColumnIndex(), ChiyaRow.DATA_FORMATTER.formatCellValue(cell)); }
+			}
+		}
 		return listData;
 	}
 
@@ -354,6 +425,7 @@ public class ExcelUtil {
 			Row row = sheet.getRow(i);
 			if (row == null) { row = sheet.createRow(i); }
 			setRowStyle(row, hashMap);
+			copyMergedRegions(sheet, i, i + 1);
 		}
 	}
 
@@ -381,8 +453,68 @@ public class ExcelUtil {
 			if (row == null) { row = sheet.createRow(i); }
 			setRowStyle(row, listStyle.get(i - startRow));
 			setRowValue(row, listData.get(i - startRow));
+			// TODO: 复制疑似出错
 			copyMergedRegions(sheet, i + count, i);
 		}
+	}
+
+	/**
+	 * 复制单元格
+	 * 
+	 * @param startRow     起始行位置
+	 * @param startCell    起始列位置
+	 * @param endRowCount  行大小
+	 * @param endCellCount 列大小
+	 * @param targetRow    目标行
+	 * @param targetCell   目标列
+	 * @param sheet        源工作薄
+	 * @param tagetSheet   目标工作薄
+	 */
+	public static void copy(int startRow, int startCell, int endRowCount, int endCellCount, int targetRow, int targetCell, Sheet sheet, Sheet tagetSheet) {
+		Loop.step(endRowCount, rowIndex -> {
+			Row sourceRow = sheet.getRow(startRow + rowIndex);
+			Row targetNewRow = tagetSheet.getRow(targetRow + rowIndex);
+			if (targetNewRow == null) { targetNewRow = tagetSheet.createRow(targetRow + rowIndex); }
+
+			Row tempRow = targetNewRow;
+			// 复制样式
+			getRowStyle(sourceRow, startCell, endCellCount).forEach(
+				(index, cellStyle) -> {
+					if (cellStyle != null) {
+						int offsetCellIndex = index - startCell + targetCell;
+						Cell cell = tempRow.getCell(offsetCellIndex);
+						if (cell == null) { cell = tempRow.createCell(offsetCellIndex); }
+						cell.setCellStyle(cellStyle);
+					}
+				}
+			);
+			// 复制值
+			getRowValue(sourceRow, startCell, endCellCount).forEach(
+				(index, data) -> {
+					if (data != null) {
+						int offsetCellIndex = index - startCell + targetCell;
+						Cell cell = tempRow.getCell(offsetCellIndex);
+						if (cell == null) { cell = tempRow.createCell(offsetCellIndex); }
+						cell.setCellValue(data.toString());
+					}
+				}
+			);
+		});
+		// 复制合并的单元格，需要等待数据样式复制完
+		sheet.getMergedRegions().forEach(range -> {
+			int nowRow = range.getFirstRow();
+			int nowCell = range.getFirstColumn();
+			if (startRow <= nowRow && nowRow < (startRow + endRowCount) && startCell <= nowCell && nowCell < (startCell + endCellCount)) {
+				// 创建新的合并区域
+				CellRangeAddress newRange = new CellRangeAddress(
+					targetRow + range.getFirstRow() - startRow,
+					targetRow + range.getLastRow() - startRow,
+					targetCell + range.getFirstColumn() - startCell,
+					targetCell + range.getLastColumn() - startCell
+				);
+				tagetSheet.addMergedRegion(newRange);
+			}
+		});
 	}
 
 	/**
@@ -499,17 +631,108 @@ public class ExcelUtil {
 			});
 		} else {
 			Loop.step(dataSize, i -> {
-				Row row = sheet.getRow(rowIndex);
-				if (row == null) { row = sheet.createRow(rowIndex); }
+				Row row = sheet.getRow(rowIndex + i);
+				if (row == null) { row = sheet.createRow(rowIndex + i); }
 				Cell cell = row.getCell(cellIndex + i);
 				if (cell == null) { cell = row.createCell(cellIndex + i); }
 				if (!StringUtil.isEmpty(ChiyaRow.DATA_FORMATTER.formatCellValue(cell))) {
 					// 按照列合并
-					sheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, cellIndex + i, cellIndex + i + mergeSize));
+					sheet.addMergedRegion(new CellRangeAddress(rowIndex + i, rowIndex + i, cellIndex, cellIndex + mergeSize));
 					// 设置样式
 					cell.setCellStyle(style);
 				}
 			});
+		}
+	}
+
+	/**
+	 * 向上移动几行，并跳过某些列
+	 * 
+	 * @param sheet       工作簿
+	 * @param startColumn 起始列
+	 * @param endColumn   结束列
+	 * @param startRow    起始行
+	 * @param count       移动几行
+	 */
+	public static void moveUpColumn(Sheet sheet, int startColumn, int endColumn, int startRow, int count) {
+		if (count < 1) { return; }
+		// 从指定行开始，将单元格内容向上移动
+		for (int index = startRow; index < sheet.getLastRowNum(); index++) {
+			Row targetRow = sheet.getRow(index);
+			Row sourceRow = sheet.getRow(index + count);
+			if (targetRow == null) { targetRow = sheet.createRow(index); }
+			// 先对目标行进行清空处理
+			clearRowAndSkipColumn(sheet, startColumn, endColumn, index);
+
+			if (sourceRow == null) {
+				// 清除目标行数据
+				continue;
+			}
+			for (int columnIndex = 0; columnIndex < sourceRow.getLastCellNum(); columnIndex++) {
+				if (columnIndex < startColumn || columnIndex > endColumn) {
+					Cell sourceCell = sourceRow.getCell(columnIndex);
+					Cell targetCell = targetRow.getCell(columnIndex);
+					if (targetCell == null) { targetCell = targetRow.createCell(columnIndex); }
+
+					// 复制单元格内容和样式
+					if (sourceCell != null) {
+						targetCell.setCellValue(ChiyaRow.DATA_FORMATTER.formatCellValue(sourceCell));
+						targetCell.setCellStyle(sourceCell.getCellStyle());
+					} else {
+						targetCell.setCellValue("");
+					}
+				}
+
+			}
+			clearRowAndSkipColumn(sheet, startColumn, endColumn, index + count);
+		}
+		
+		// 复制合并的单元格，需要等待数据样式复制完
+		List<CellRangeAddress> list = new ArrayList<>();
+		// 删除的索引
+		List<Integer> removeIndex = new ArrayList<>();
+		for (int i = 0; i < sheet.getNumMergedRegions(); i++) {
+			CellRangeAddress range = sheet.getMergedRegion(i);
+			int nowRow = range.getFirstRow();
+			int nowColumn = range.getFirstColumn();
+			if (startRow + count <= nowRow && (nowColumn < startColumn || nowColumn > endColumn)) {
+				// 创建新的合并区域
+				CellRangeAddress newRange = new CellRangeAddress(
+					range.getFirstRow() - count,
+					range.getLastRow() - count,
+					range.getFirstColumn(),
+					range.getLastColumn()
+				);
+				list.add(newRange);
+				removeIndex.add(i);
+			}
+		}
+		// 通过这里批量删除
+		sheet.removeMergedRegions(removeIndex);
+		list.forEach(obj -> sheet.addMergedRegion(obj));
+
+	}
+
+	/**
+	 * 清空行并且跳过区间的列
+	 * 
+	 * @param sheet       SHEET页
+	 * @param startColumn 起始列
+	 * @param endColumn   结束列
+	 * @param rowIndex    所在行
+	 */
+	public static void clearRowAndSkipColumn(Sheet sheet, int startColumn, int endColumn, int rowIndex) {
+		Row targetRow = sheet.getRow(rowIndex);
+		if (targetRow == null) { targetRow = sheet.createRow(rowIndex); }
+
+		for (int columnIndex = 0; columnIndex <= targetRow.getLastCellNum(); columnIndex++) {
+			if (columnIndex < startColumn || columnIndex > endColumn) {
+				Cell targetCell = targetRow.getCell(columnIndex);
+				if (targetCell != null) {
+					targetCell.setCellValue("");
+					targetCell.setCellStyle(null);
+				}
+			}
 		}
 	}
 }

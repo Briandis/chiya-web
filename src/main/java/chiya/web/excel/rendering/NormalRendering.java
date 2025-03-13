@@ -7,6 +7,7 @@ import java.util.function.Function;
 
 import org.apache.poi.ss.usermodel.Sheet;
 
+import chiya.core.base.constant.ChiyaConstant;
 import chiya.core.base.exception.Assert;
 import chiya.core.base.loop.Loop;
 import chiya.core.base.pack.IntegerPack;
@@ -32,12 +33,18 @@ public class NormalRendering implements BaseRenderingExcel {
 		// 计算插入行数，需要找到起始的列并计算差值
 		IntegerPack insertSize = new IntegerPack();
 		IntegerPack start = new IntegerPack();
-		// 计算总共要插入多少行
+
+		// 获取类型
+		// 向上渲染和向下需要计算行高，左右不需要
+		// 按照区块设计原则，区块内坐标是绝对的，所以允许多方向渲染，所以插入行数只需要计算向上向下渲染的即可
 		config.getListExcelCoordinateConfig().forEach(reference -> {
 			if (reference.getReference() != null) {
 				if (start.getData() < reference.getRowIndex()) { start.setData(reference.getRowIndex()); }
 				List<Object> data = dataMap.get(reference.getReference());
-				if (data != null && data.size() + reference.getRowIndex() > insertSize.getData()) { insertSize.setData(data.size() + reference.getRowIndex()); }
+				if (data != null && data.size() + reference.getRowIndex() > insertSize.getData()
+					&& (reference.getDirection() == ChiyaConstant.Direction.UP || reference.getDirection() == ChiyaConstant.Direction.DOWN)) {
+					insertSize.setData(data.size() + reference.getRowIndex());
+				}
 			}
 		});
 		insertSize.setData(insertSize.getData() - start.getData() - 1);
@@ -46,10 +53,20 @@ public class NormalRendering implements BaseRenderingExcel {
 		ExcelUtil.insertRow(start.getData() + insertCount.getData(), insertSize.getData(), sheet);
 
 		Loop.forEach(config.getListExcelCoordinateConfig(), (reference, count) -> {
+			// 根据引用写入数据
 			if (reference.getReference() != null) {
 				List<Object> data = dataMap.get(reference.getReference());
 				Assert.isTrue(data == null || data.size() == 0, reference.getReference() + "的值不存在");
-				ExcelUtil.writeValue(sheet, reference.getRowIndex() + insertCount.getData(), reference.getCellIndex(), data, formatFunction.get(reference.getFormat()));
+				// 写入
+				ExcelUtil.writeValue(
+					sheet,
+					reference.getRowIndex() + insertCount.getData(),
+					reference.getCellIndex(),
+					data,
+					formatFunction.get(reference.getFormat()),
+					// 按照区块配置的渲染方向写入，虽然也可以按照
+					reference.getDirection()
+				);
 
 				if (reference.getMergeDown() > 0) {
 					// 后置处理合并单元格

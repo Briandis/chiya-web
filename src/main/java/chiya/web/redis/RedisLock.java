@@ -24,7 +24,7 @@ public class RedisLock {
 	 * @param unlockTime 锁多久后自动释放
 	 */
 	public void lock(String redisKey, int retry, int sleep, int unlockTime) {
-		String longId = String.valueOf(Thread.currentThread().getId());
+		String longId = String.valueOf(Thread.currentThread().getPriority());
 		int index = 0;
 		while (index < retry) {
 			if (redisService.lock(redisKey, longId, unlockTime)) { return; }
@@ -58,7 +58,7 @@ public class RedisLock {
 	 * @param riedsKey redis的锁
 	 */
 	public void unlock(String riedsKey) {
-		String longId = String.valueOf(Thread.currentThread().getId());
+		String longId = String.valueOf(Thread.currentThread().getPriority());
 		redisService.unlock(riedsKey, longId);
 	}
 
